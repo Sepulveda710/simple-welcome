@@ -569,8 +569,40 @@ Las instalaciones existentes se actualizan solas al abrir la app.
 `git` y `gh` se instalaron con winget en esta sesión; en una terminal
 recién abierta ya están en el PATH (si no, refrescarlo).
 
-No hay pendientes anotados sin ejecutar en este momento — cualquier lista de
-"pendientes" que Abel mencione es nueva a partir de aquí.
+**PENDIENTES ANOTADOS POR ABEL (2026-09-20) — anotados, NO ejecutar hasta
+que Abel diga "ejecuta"** (regla "anota, no ejecutes" de arriba):
+
+1. **Bug en la pantalla de Configuración: el scroll se "cuela" a la página
+   de atrás.** Al hacer scroll dentro de Configuración también se mueve la
+   página principal de noticias. Probable arreglo: `overscroll-behavior:
+   contain` en el contenido del modal y/o bloquear el scroll del body
+   mientras haya un modal abierto (aplica a todos los `.capa-configuracion`,
+   no solo Configuración — revisar Guardados, Ver por fuente, calendario).
+2. **Poder EDITAR una fuente ya agregada** (hoy solo se puede borrar y
+   volver a crear). Caso real: Abel agregó una fuente de motorización sin
+   categoría y tuvo que borrarla y rehacerla. Editar nombre, URL,
+   categoría y color desde "Mis fuentes" (`gestion-fuentes.js` +
+   `pintarListaFuentes`). Considerar también no dejar guardar sin
+   categoría (hoy cae en 'General') o avisarlo.
+3. **Animación de inicio bonita** (el splash se quitó en 5.6 tras dos
+   intentos fallidos — leer la nota de esa sesión antes de rehacerlo).
+   Abel tiene una animación que Gemini le generó y le gustó mucho, pero
+   Claude no puede ver videos: pedirle a Abel el código/prompt de Gemini,
+   o 3–5 capturas de momentos clave (inicio/medio/fin) con tiempos, o el
+   video para sacarle cuadros (requeriría instalar ffmpeg — pedir permiso).
+   Al rehacerlo: verificar con DevTools/`getAnimations()`, no a ciegas.
+4. **Lector de noticias en voz alta, lo más natural posible** ("como si
+   una persona te lo leyera"), para dejarlo de fondo mientras hace otra
+   cosa. Opciones evaluadas con Abel el 2026-09-20: voces de Windows
+   (`speechSynthesis`, gratis, robóticas), Piper TTS (offline, gratis,
+   bastante natural, pesa por voz), y nube con llave propia (Azure Speech
+   voces es-MX neuronales, ElevenLabs, OpenAI TTS) — decisión pendiente.
+   Diseñarlo con el motor de voz intercambiable.
+5. **Ligereza de la app** (ver la nota de "app más ligera" arriba) — Abel
+   quiere que sea ligera pero lo dejó **para casi al final**.
+6. **Compartir la app con otras personas** (grupo de Facebook de
+   vibe-coders): ver "Ideas para si Abel algún día comparte la app
+   públicamente" abajo; incluye idea de un botón de comentarios/feedback.
 
 Pendiente conocido para el futuro (mencionado pero no diseñado a fondo
 todavía): que la app se abra sola al iniciar Windows (el empaquetado en sí
@@ -658,6 +690,24 @@ hay que hacer nada de esto todavía, y "anota" significa no ejecutar):
 - **Derechos de autor**: el modo lectura muestra el texto completo de
   artículos de otros medios. Bien para uso personal; con distribución
   amplia, considerar mostrar solo resumen + enlace al original.
+- **Compartir con conocidos/desconocidos (grupo de Facebook de
+  vibe-coders) y miedo a que copien la idea** (Abel, 2026-09-20): hechos a
+  tener presentes — (a) el repo YA es público, así que el código ya es
+  visible; sin licencia, por defecto todos los derechos quedan reservados
+  a Abel (nadie puede reutilizarlo legalmente), y el historial de commits
+  con fechas prueba que él lo hizo primero; (b) cualquier app Electron
+  expone su código: el `app.asar` del instalador se abre fácil, así que
+  compartir el `.exe` equivale a compartir el código; (c) para pedir
+  opinión sin regalar nada: capturas/video/demo, o dejar que prueben el
+  instalador sabiendo lo de (b); (d) elegir licencia es decisión de Abel:
+  MIT = cualquiera puede copiar y hasta vender; una "source-available"
+  no comercial (ej. PolyForm Noncommercial / CC BY-NC) restringe uso
+  comercial pero NO es open source (y SignPath exige OSI — incompatible);
+  (e) idea de **botón de comentarios en la app**: opciones sin servidor
+  propio — abrir un Google Form/Tally (sin cuenta, llega por correo) y/o
+  GitHub Issues; `mailto:` expondría su correo (usar un alias); NO enviar
+  nada en silencio (privacidad) — si se agrega versión/SO, que sea
+  visible para el usuario antes de enviar.
 - **Privacidad**: si otras personas la usan, tendría que cuidarse qué
   datos suyos se guardan/envían (ciudad para el clima, favicons vía
   Google, etc.) y quizá agregar una política de privacidad.
