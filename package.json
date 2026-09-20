@@ -43,7 +43,8 @@
     "publish": {
       "provider": "github",
       "owner": "Sepulveda710",
-      "repo": "simple-welcome"
+      "repo": "simple-welcome",
+      "releaseType": "release"
     }
   }
 }
