@@ -942,6 +942,16 @@ html.con-tinte[data-tema="claro"] #modo-lectura:not(.calido) .encabezado-articul
   color: var(--accent-texto);
 }
 
+.mensaje-proposito {
+  margin: 4px 0 0;
+  padding: 10px 12px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--texto-secundario);
+  background: var(--accent-fondo);
+  border-radius: var(--radio);
+}
+
 .acciones-configuracion {
   display: flex;
   gap: 10px;

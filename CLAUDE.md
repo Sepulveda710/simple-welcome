@@ -547,3 +547,59 @@ directo en la carpeta de inicio o una entrada de registro); interacción
 con Chía vía una IA local; versión para tablet Android (arquitectura sin
 definir); login + sync de configuración/leídos contra un servidor propio;
 integración con calendario de Outlook.
+
+**Sesión 2026-09-20 (Beta 5.7 → 5.8): inicio con Windows + el "por qué"
+de la app.** `iniciarConWindows` (default `true`) en `configuracion.js`;
+`aplicarInicioConWindows()` en `main.js` usa `app.setLoginItemSettings` y
+solo actúa con `app.isPackaged` (con `npm start` registraría el
+`electron.exe` suelto de node_modules como programa de inicio). Se
+re-aplica en cada arranque, al guardar Configuración y al restablecer.
+Interruptor en Configuración > "Al encender tu computadora", con el
+mensaje de propósito (`.mensaje-proposito` en `index.html`, redactado a
+partir de lo que Abel contó: recuperar el hábito de leer noticias de sus
+fuentes con un café/comida en vez de dejar que las redes decidan qué lee;
+por eso abrir al encender la PC — Abel puede ajustar el texto). El mismo
+"por qué" está en el README. Probado en dev por código (guardar/leer el
+interruptor); **el registro real en Windows solo se puede comprobar con la
+versión instalada** — pendiente de verificar tras publicar 5.8 e instalar.
+Abel prefiere fuentes de tecnología y economía; no política ni deportes
+por defecto (clickbait) — ver el mensaje del README.
+
+**Idea anotada (no ejecutar todavía): leer la noticia en voz alta** —
+botón en modo lectura para que la app narre el artículo mientras Abel
+hace otra cosa (comer, etc.). Punto de partida probable: la API de voz
+del sistema (`speechSynthesis` en el renderer usa voces de Windows,
+sin costo ni internet); ver antes qué voces en español hay instaladas.
+
+**Ideas para si Abel algún día comparte la app públicamente** (anotadas el
+2026-09-20, solo ideas — hoy la app es solo para uso personal de Abel, no
+hay que hacer nada de esto todavía, y "anota" significa no ejecutar):
+- **Firma de código**: hoy el instalador no está firmado (SmartScreen
+  avisa la primera vez, no afecta las actualizaciones automáticas). Camino
+  gratis: SignPath Foundation — pide licencia open source aprobada (el repo
+  hoy no tiene ninguna; MIT sería lo simple), repo público (ya lo es),
+  proyecto no comercial, y construir el instalador en GitHub Actions en vez
+  de en la PC (habría que escribir el workflow y cambiar el flujo de
+  `npm run release`). El certificado sale a nombre de "SignPath
+  Foundation", no de Abel. Verificar requisitos actuales en signpath.org
+  antes de aplicar; Azure Trusted Signing probablemente no aplica a
+  personas en México.
+- **Donaciones voluntarias**: encajan con una app limpia y sin anuncios
+  (GitHub Sponsors, Ko-fi, Buy Me a Coffee). Verificar disponibilidad en
+  México y cómo se declaran fiscalmente — no se investigó. Ojo: SignPath
+  exige que el proyecto no sea comercial; donaciones suelen ser aceptables
+  pero revisar sus términos.
+- **Publicidad**: el modo lectura quita los anuncios de los sitios a
+  propósito (Readability). Reactivarlos cargando la página real chocaría
+  con la sanitización/CSP de `modo-lectura.js` y `index.html`. Alternativa
+  que respeta a los medios: botón "Ver en el sitio original" (WebContentsView
+  como `panel-ia.js`, o navegador externo — `abrirExterno` ya existe).
+  Anuncios propios dentro de la app: AdSense no permite apps de escritorio,
+  rompe el estilo minimalista y volvería comercial el proyecto (choca con
+  SignPath).
+- **Derechos de autor**: el modo lectura muestra el texto completo de
+  artículos de otros medios. Bien para uso personal; con distribución
+  amplia, considerar mostrar solo resumen + enlace al original.
+- **Privacidad**: si otras personas la usan, tendría que cuidarse qué
+  datos suyos se guardan/envían (ciudad para el clima, favicons vía
+  Google, etc.) y quizá agregar una política de privacidad.

@@ -1,64 +1,51 @@
 # Simple Welcome
 
-_Beta 4.0_ — app de bienvenida al iniciar Windows: saludo personalizado,
-hora, clima, calendario con recordatorios, Chía (la mascota), noticias por
-RSS con modo lectura, y un panel de búsqueda con IA integrado.
+Una app de bienvenida para Windows: al encender tu computadora te saluda,
+te muestra el clima, tu calendario y las noticias de **tus** fuentes, y te
+deja leerlas sin ruido. Incluye a Chía, la mascota.
 
-## Cómo correrlo
+## Por qué existe
+
+Antes yo entraba seguido a las páginas de noticias que me interesaban. Con
+el tiempo las redes sociales se volvieron el filtro de todo lo que leo, y
+dejé de visitar esas páginas. Extrañaba el hábito: sentarme con un café o
+una comida y ponerme al día — saber qué se hizo, qué se planea, qué se
+rumora — directo de las fuentes que elijo, no de lo que un algoritmo decide
+ponerme enfrente.
+
+Por eso la app abre sola al iniciar Windows: es el momento natural para
+ponerse al día, al empezar el día o al prepararse para dormir. (Se puede
+apagar en Configuración.) Y si no quieres sentarte a leer, abres una
+noticia y la dejas de fondo mientras haces otra cosa.
+
+Las fuentes por defecto son de tecnología y economía. No hay política ni
+deportes a propósito — pero cada quien agrega las que quiera, y las que sean
+de calidad.
+
+## Instalar
+
+Descarga el instalador de la última versión en
+[Releases](https://github.com/Sepulveda710/simple-welcome/releases). La app se
+actualiza sola después. (El instalador aún no está firmado, así que Windows
+muestra "Windows protegió su PC": elige "Más información" → "Ejecutar de
+todas formas".)
+
+## Correrla para desarrollar
 
 ```bash
 npm install
 npm start
 ```
 
-> **Si ya tenías la app instalada de antes:** esta versión actualizó Electron
-> (necesario para que el efecto Mica no rompa el redimensionado de la
-> ventana). Borra la carpeta `node_modules` y el archivo
-> `package-lock.json`, y vuelve a correr `npm install` — si no, puede que
-> siga usando la versión vieja que ya tenías descargada.
-
-## Cómo agregar o quitar una fuente de noticias
-
-Abre `config/fuentes.json` y agrega o borra un bloque como este:
-
-```json
-{
-  "nombre": "Nombre del medio",
-  "url": "https://ejemplo.com/feed",
-  "categoria": "Tecnología"
-}
-```
-
-No necesitas tocar ningún otro archivo. Si el feed falla o no existe,
-esa fuente simplemente no aparece — el resto de la app sigue funcionando.
-
-## Cómo cambiar tu nombre
-
-Edita `config/usuario.json`.
-
-## Estructura del proyecto
+## Estructura
 
 ```
-main.js              → arranca la ventana y conecta los módulos
-preload.js            → puente seguro entre la app y la interfaz
-config/
-  fuentes.json        → medios de noticias (editable)
-  usuario.json        → tu nombre y preferencias
-src/
-  saludo.js           → arma el mensaje de bienvenida
-  lector-rss.js        → lee los feeds y normaliza los artículos
-  modo-lectura.js      → extrae el texto limpio de un artículo
-renderer/
-  index.html          → estructura de la pantalla
-  styles.css          → estilos (base plana por ahora)
-  renderer.js          → pinta los datos en pantalla
+main.js         → arranca la ventana, actualizaciones e inicio con Windows
+preload.js      → puente seguro entre la app y la interfaz
+src/            → un módulo por responsabilidad (RSS, modo lectura, clima…)
+renderer/       → interfaz (HTML/CSS/JS planos, sin build)
 ```
 
-Cada módulo en `src/` hace una sola cosa y no depende de cómo están hechos
-los demás. Por ejemplo, si mañana cambias todo el diseño de la interfaz,
-`lector-rss.js` y `modo-lectura.js` no se tocan ni se rompen.
-
-## Siguiente etapa (pendiente)
-
-- Iniciar automáticamente con Windows (acceso directo en la carpeta de inicio).
-- Estética Fluent (Mica/Acrylic, iconos Segoe Fluent, transiciones suaves).
+Los datos del usuario (nombre, fuentes, leídos, guardados) viven en
+`%APPDATA%\simple-welcome`, no en la carpeta de la app, para que
+actualizar nunca los borre.

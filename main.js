@@ -34,6 +34,16 @@ Menu.setApplicationMenu(null);
 
 let ventanaPrincipal = null; // referencia para los handlers de IPC del panel-ia, más abajo
 
+// Registra (o quita) la app para abrir sola al iniciar sesión en Windows.
+// Solo en la versión instalada: corriendo con "npm start" esto registraría
+// el electron.exe suelto de node_modules como programa de inicio, que no es
+// la app y se quedaría ahí aunque la desinstales. Por eso el mismo guard
+// que el actualizador (app.isPackaged).
+function aplicarInicioConWindows(activo) {
+  if (!app.isPackaged) return;
+  app.setLoginItemSettings({ openAtLogin: Boolean(activo) });
+}
+
 function crearVentana() {
   const estadoGuardado = obtenerEstadoVentana();
 
@@ -105,6 +115,9 @@ ipcMain.handle('guardar-configuracion', (_evento, cambios) => {
   if (cambios.tema) {
     nativeTheme.themeSource = cambios.tema === 'oscuro' ? 'dark' : 'light';
   }
+  if (cambios.iniciarConWindows !== undefined) {
+    aplicarInicioConWindows(cambios.iniciarConWindows);
+  }
   return resultado;
 });
 ipcMain.handle('obtener-recordatorios', () => obtenerRecordatorios());
@@ -117,7 +130,11 @@ ipcMain.handle('obtener-fuentes', () => obtenerFuentes());
 ipcMain.handle('agregar-fuente', (_evento, fuente) => agregarFuente(fuente));
 ipcMain.handle('eliminar-fuente', (_evento, url) => eliminarFuente(url));
 ipcMain.handle('alternar-fuente-activa', (_evento, url) => alternarFuenteActiva(url));
-ipcMain.handle('restablecer-configuracion', () => restablecerConfiguracion());
+ipcMain.handle('restablecer-configuracion', () => {
+  const resultado = restablecerConfiguracion();
+  aplicarInicioConWindows(resultado.iniciarConWindows);
+  return resultado;
+});
 ipcMain.handle('obtener-version-app', () => app.getVersion());
 ipcMain.handle('obtener-guardados', () => obtenerGuardados());
 ipcMain.handle('guardar-articulo', (_evento, articulo) => guardarArticulo(articulo));
@@ -154,7 +171,12 @@ app.whenReady().then(() => {
   // vivía arriba, a nivel de módulo) porque obtenerConfiguracion() ahora
   // usa app.getPath('userData'), que solo debe llamarse una vez la app
   // está lista.
-  nativeTheme.themeSource = obtenerConfiguracion().tema === 'oscuro' ? 'dark' : 'light';
+  const configInicial = obtenerConfiguracion();
+  nativeTheme.themeSource = configInicial.tema === 'oscuro' ? 'dark' : 'light';
+
+  // Se re-aplica en cada arranque (no solo al guardar) para que se
+  // mantenga bien tras una actualización o si Windows perdió el registro.
+  aplicarInicioConWindows(configInicial.iniciarConWindows);
 
   crearVentana();
 

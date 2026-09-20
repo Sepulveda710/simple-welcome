@@ -28,6 +28,7 @@ const VALORES_POR_DEFECTO = {
   formato24h: false, // false = 12h (con a. m./p. m.), true = 24h — ver saludo.js
   unidadTemperatura: 'celsius', // 'celsius' | 'fahrenheit' — ver clima.js
   caraChiaPredeterminada: 'relajado', // id de EXPRESIONES_CHIA — la cara "de reposo" (los estados contextuales como "triste" la siguen pisando temporalmente)
+  iniciarConWindows: true, // abrir la app sola al iniciar sesión en Windows — ver aplicarInicioConWindows en main.js (solo aplica en la versión instalada)
   mostrarSaludoInicio: true // splash de bienvenida al arrancar (ver src/splash-estado.js) — apagar esto lo salta sin importar si hoy ya tocaba o no
 };
 

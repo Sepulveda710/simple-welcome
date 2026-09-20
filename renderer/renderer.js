@@ -1407,6 +1407,7 @@ function poblarFormularioConfiguracion(config) {
   document.getElementById('input-noticias-pagina').value = String(config.noticiasPorPagina);
   document.getElementById('input-unidad-temperatura').value = config.unidadTemperatura || 'celsius';
   document.getElementById('input-formato-hora').value = config.formato24h ? '24' : '12';
+  document.getElementById('input-iniciar-con-windows').checked = config.iniciarConWindows !== false;
   pintarSelectorCarasChia(config.caraChiaPredeterminada || 'relajado');
 }
 
@@ -1449,6 +1450,7 @@ async function guardarCambiosConfiguracion(evento) {
   const cambios = {
     nombre, tema, modoCalidoLectura, noticiasPorPagina,
     unidadTemperatura, formato24h,
+    iniciarConWindows: document.getElementById('input-iniciar-con-windows').checked,
     caraChiaPredeterminada: caraChiaSeleccionadaEnFormulario
   };
 
