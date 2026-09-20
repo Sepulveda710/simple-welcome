@@ -1108,7 +1108,7 @@ html:has(.capa-configuracion:not(.oculto)) {
 }
 .item-fuente.inactiva { opacity: 0.55; }
 
-.fila-superior-fuente { display: flex; align-items: center; gap: 8px; padding-right: 18px; }
+.fila-superior-fuente { display: flex; align-items: center; gap: 8px; padding-right: 44px; }
 .favicon-item-fuente { width: 18px; height: 18px; border-radius: 4px; flex-shrink: 0; }
 .nombre-item-fuente {
   flex: 1;
@@ -1136,6 +1136,20 @@ html:has(.capa-configuracion:not(.oculto)) {
   padding: 2px;
 }
 .boton-eliminar-fuente:hover { color: #c62828; }
+
+.boton-editar-fuente {
+  position: absolute;
+  top: 8px;
+  right: 30px;
+  background: none;
+  border: none;
+  color: var(--texto-terciario);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 2px;
+}
+.boton-editar-fuente:hover { color: var(--accent); }
 
 @media (max-width: 520px) {
   .lista-fuentes { grid-template-columns: 1fr; }

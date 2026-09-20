@@ -27,6 +27,7 @@ contextBridge.exposeInMainWorld('api', {
   obtenerCita: () => ipcRenderer.invoke('obtener-cita'),
   obtenerFuentes: () => ipcRenderer.invoke('obtener-fuentes'),
   agregarFuente: (fuente) => ipcRenderer.invoke('agregar-fuente', fuente),
+  editarFuente: (urlOriginal, cambios) => ipcRenderer.invoke('editar-fuente', urlOriginal, cambios),
   eliminarFuente: (url) => ipcRenderer.invoke('eliminar-fuente', url),
   alternarFuenteActiva: (url) => ipcRenderer.invoke('alternar-fuente-activa', url),
   restablecerConfiguracion: () => ipcRenderer.invoke('restablecer-configuracion'),

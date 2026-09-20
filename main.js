@@ -22,7 +22,7 @@ const { obtenerConfiguracion, guardarConfiguracion, restablecerConfiguracion } =
 const { obtenerRecordatorios, agregarRecordatorio, eliminarRecordatorio } = require('./src/recordatorios');
 const { obtenerClima, buscarCiudad } = require('./src/clima');
 const { obtenerCitaDelDia } = require('./src/cita');
-const { obtenerFuentes, agregarFuente, eliminarFuente, alternarFuenteActiva } = require('./src/gestion-fuentes');
+const { obtenerFuentes, agregarFuente, editarFuente, eliminarFuente, alternarFuenteActiva } = require('./src/gestion-fuentes');
 const { obtenerGuardados, guardarArticulo, eliminarGuardado } = require('./src/guardados');
 const { abrirPanelIA, cerrarPanelIA, reposicionarPanelIA } = require('./src/panel-ia');
 
@@ -128,6 +128,7 @@ ipcMain.handle('buscar-ciudad', (_evento, nombre) => buscarCiudad(nombre));
 ipcMain.handle('obtener-cita', () => obtenerCitaDelDia());
 ipcMain.handle('obtener-fuentes', () => obtenerFuentes());
 ipcMain.handle('agregar-fuente', (_evento, fuente) => agregarFuente(fuente));
+ipcMain.handle('editar-fuente', (_evento, urlOriginal, cambios) => editarFuente(urlOriginal, cambios));
 ipcMain.handle('eliminar-fuente', (_evento, url) => eliminarFuente(url));
 ipcMain.handle('alternar-fuente-activa', (_evento, url) => alternarFuenteActiva(url));
 ipcMain.handle('restablecer-configuracion', () => {

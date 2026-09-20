@@ -1567,6 +1567,16 @@ async function pintarListaFuentes() {
   const contenedor = document.getElementById('lista-fuentes');
   contenedor.innerHTML = '';
 
+  // Sugerencias de categoría al escribir en el formulario: las que ya
+  // existen, para no crear "Economia" y "Economía" por accidente.
+  const listaCategorias = document.getElementById('lista-categorias-fuentes');
+  listaCategorias.innerHTML = '';
+  [...new Set(fuentes.map((f) => f.categoria).filter(Boolean))].forEach((categoria) => {
+    const opcion = document.createElement('option');
+    opcion.value = categoria;
+    listaCategorias.appendChild(opcion);
+  });
+
   fuentes.forEach((fuente) => {
     // Mismo truco que pintarGridFuentes: el favicon real sale del enlace
     // de un artículo de esta fuente (ej. xataka.com), no de la URL del
@@ -1578,6 +1588,7 @@ async function pintarListaFuentes() {
     item.className = `item-fuente ${fuente.activa === false ? 'inactiva' : ''}`;
     item.style.setProperty('--source-color', fuente.color || 'var(--accent)');
     item.innerHTML = `
+      <button class="boton-editar-fuente" title="Editar">✎</button>
       <button class="boton-eliminar-fuente" title="Eliminar">✕</button>
       <div class="fila-superior-fuente">
         <img class="favicon-item-fuente" src="${urlFavicon(enlaceParaFavicon)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
@@ -1598,6 +1609,8 @@ async function pintarListaFuentes() {
       pintarNoticias(); // refleja de inmediato si la fuente entra o sale de la lista
     });
 
+    item.querySelector('.boton-editar-fuente').addEventListener('click', () => abrirFormularioFuente(fuente));
+
     item.querySelector('.boton-eliminar-fuente').addEventListener('click', async () => {
       await window.api.eliminarFuente(fuente.url);
       pintarListaFuentes();
@@ -1608,32 +1621,83 @@ async function pintarListaFuentes() {
   });
 }
 
-async function guardarNuevaFuente() {
-  const nombre = document.getElementById('input-nombre-fuente').value.trim();
-  const url = document.getElementById('input-url-fuente').value.trim();
-  const categoria = document.getElementById('input-categoria-fuente').value.trim() || 'General';
-  const color = document.getElementById('input-color-fuente').value;
+// El mismo formulario sirve para agregar y para editar. Mientras se edita,
+// aquí se recuerda cuál fuente es (por su URL y nombre ORIGINALES — la URL
+// misma se puede corregir, y si el nombre cambia hay que actualizar el
+// filtro "Ver por fuente" si justo estaba activo en esa fuente).
+let urlFuenteEnEdicion = null; // null = agregando una nueva
+let nombreFuenteEnEdicion = null;
 
-  if (!nombre || !url) return;
+function mostrarErrorFormFuente(texto) {
+  const aviso = document.getElementById('error-form-fuente');
+  aviso.textContent = texto;
+  aviso.classList.toggle('oculto', !texto);
+}
 
-  await window.api.agregarFuente({ nombre, url, categoria, color });
+function abrirFormularioFuente(fuente = null) {
+  urlFuenteEnEdicion = fuente ? fuente.url : null;
+  nombreFuenteEnEdicion = fuente ? fuente.nombre : null;
 
-  document.getElementById('input-nombre-fuente').value = '';
-  document.getElementById('input-url-fuente').value = '';
-  document.getElementById('input-categoria-fuente').value = '';
+  document.getElementById('titulo-form-fuente').textContent = fuente ? 'Editar fuente' : 'Nueva fuente';
+  document.getElementById('input-nombre-fuente').value = fuente ? fuente.nombre : '';
+  document.getElementById('input-url-fuente').value = fuente ? fuente.url : '';
+  document.getElementById('input-categoria-fuente').value = fuente ? (fuente.categoria || '') : '';
+  document.getElementById('input-color-fuente').value = (fuente && fuente.color) || '#0067c0';
+  mostrarErrorFormFuente('');
+
+  const formulario = document.getElementById('form-fuente');
+  formulario.classList.remove('colapsado');
+  formulario.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  document.getElementById('input-nombre-fuente').focus();
+}
+
+function cerrarFormularioFuente() {
+  urlFuenteEnEdicion = null;
+  nombreFuenteEnEdicion = null;
   document.getElementById('form-fuente').classList.add('colapsado');
+  mostrarErrorFormFuente('');
+}
 
-  pintarListaFuentes();
-  pintarNoticias(); // descarga ya la fuente nueva, para que aparezca de inmediato
+async function guardarFormularioFuente() {
+  const datos = {
+    nombre: document.getElementById('input-nombre-fuente').value,
+    url: document.getElementById('input-url-fuente').value,
+    categoria: document.getElementById('input-categoria-fuente').value,
+    color: document.getElementById('input-color-fuente').value
+  };
+  const editando = urlFuenteEnEdicion !== null;
+
+  const resultado = editando
+    ? await window.api.editarFuente(urlFuenteEnEdicion, datos)
+    : await window.api.agregarFuente(datos);
+
+  if (!resultado.ok) {
+    mostrarErrorFormFuente(resultado.error); // texto claro desde gestion-fuentes.js
+    return;
+  }
+
+  if (editando && fuenteActiva === nombreFuenteEnEdicion) fuenteActiva = datos.nombre.trim();
+
+  cerrarFormularioFuente();
+  await pintarListaFuentes();
+  pintarNoticias(); // vuelve a descargar: refleja al instante la fuente nueva o los cambios
 }
 
 document.getElementById('abrir-configuracion').addEventListener('click', abrirConfiguracion);
 document.getElementById('cerrar-configuracion').addEventListener('click', cerrarConfiguracion);
 document.getElementById('restablecer-leidos').addEventListener('click', restablecerEstadoLectura);
 document.getElementById('abrir-form-fuente').addEventListener('click', () => {
-  document.getElementById('form-fuente').classList.toggle('colapsado');
+  const abierto = !document.getElementById('form-fuente').classList.contains('colapsado');
+  if (abierto && urlFuenteEnEdicion === null) cerrarFormularioFuente(); // ya era "nueva": el botón la cierra
+  else abrirFormularioFuente(null); // cerrado, o se estaba editando otra: empieza una nueva
 });
-document.getElementById('guardar-nueva-fuente').addEventListener('click', guardarNuevaFuente);
+document.getElementById('guardar-nueva-fuente').addEventListener('click', guardarFormularioFuente);
+document.getElementById('cancelar-form-fuente').addEventListener('click', cerrarFormularioFuente);
+['input-nombre-fuente', 'input-url-fuente', 'input-categoria-fuente'].forEach((id) => {
+  document.getElementById(id).addEventListener('keydown', (evento) => {
+    if (evento.key === 'Enter') guardarFormularioFuente();
+  });
+});
 
 // --- Comentarios (Configuración > Comentarios) ---
 //

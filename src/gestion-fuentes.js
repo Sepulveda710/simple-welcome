@@ -44,11 +44,66 @@ function guardar(fuentes) {
   fs.writeFileSync(rutaArchivo(), JSON.stringify(fuentes, null, 2));
 }
 
+// Devuelve un mensaje de error en español (para mostrar tal cual en la
+// interfaz) o null si la fuente es válida. "urlOriginal" es la URL que
+// tenía la fuente antes de editarla — para no contar como repetida a la
+// propia fuente que se está editando.
+function validarFuente(fuente, urlOriginal = null) {
+  if (!String(fuente.nombre || '').trim()) return 'Escribe un nombre.';
+
+  let esWeb = false;
+  try {
+    esWeb = ['http:', 'https:'].includes(new URL(String(fuente.url || '').trim()).protocol);
+  } catch {
+    // URL mal escrita — se queda en false
+  }
+  if (!esWeb) return 'La URL del RSS debe empezar con http:// o https://';
+
+  const url = String(fuente.url).trim();
+  const repetida = obtenerFuentes().some((f) => f.url === url && f.url !== urlOriginal);
+  if (repetida) return 'Ya tienes una fuente con esa URL.';
+
+  return null;
+}
+
+// Limpia espacios y aplica el valor por defecto de la categoría.
+function normalizarFuente(fuente) {
+  return {
+    ...fuente,
+    nombre: String(fuente.nombre).trim(),
+    url: String(fuente.url).trim(),
+    categoria: String(fuente.categoria || '').trim() || 'General'
+  };
+}
+
+// Las tres devuelven { ok: true, fuentes } o { ok: false, error } — un
+// "throw" cruzando IPC llegaría a la interfaz envuelto en un mensaje
+// técnico ("Error invoking remote method…") en vez del texto claro.
 function agregarFuente(fuente) {
+  const error = validarFuente(fuente);
+  if (error) return { ok: false, error };
+
   const fuentes = obtenerFuentes();
-  fuentes.push(fuente);
+  fuentes.push(normalizarFuente(fuente));
   guardar(fuentes);
-  return fuentes;
+  return { ok: true, fuentes };
+}
+
+// Cambia nombre/URL/categoría/color de una fuente ya guardada. Se
+// identifica por su URL ORIGINAL (por eso la URL misma se puede corregir).
+// Conserva el resto de sus campos, como "activa".
+function editarFuente(urlOriginal, cambios) {
+  const fuentes = obtenerFuentes();
+  const indice = fuentes.findIndex((f) => f.url === urlOriginal);
+  if (indice === -1) return { ok: false, error: 'No se encontró la fuente (¿se borró?).' };
+
+  const propuesta = { ...fuentes[indice], ...cambios };
+  const error = validarFuente(propuesta, urlOriginal);
+  if (error) return { ok: false, error };
+
+  fuentes[indice] = normalizarFuente(propuesta);
+  guardar(fuentes);
+  return { ok: true, fuentes };
 }
 
 // Se identifica por la URL del feed porque es lo único que de verdad es
@@ -70,4 +125,4 @@ function alternarFuenteActiva(url) {
   return fuentes;
 }
 
-module.exports = { obtenerFuentes, agregarFuente, eliminarFuente, alternarFuenteActiva };
+module.exports = { obtenerFuentes, agregarFuente, editarFuente, eliminarFuente, alternarFuenteActiva };
