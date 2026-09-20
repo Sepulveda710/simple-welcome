@@ -1,0 +1,11 @@
+node_modules/
+dist/
+
+# Datos personales (nombre, ciudad, coordenadas, tus fuentes de RSS) — ya
+# no hace falta que vivan aquí para que la app funcione (ver
+# src/configuracion.js y src/gestion-fuentes.js: la app lee de
+# %APPDATA%\simple-welcome desde la sesión de migración de hoy), se quedan
+# solo como semilla de migración para instalaciones viejas. No deberían
+# subirse a GitHub, sea el repo público o privado.
+config/usuario.json
+config/fuentes.json

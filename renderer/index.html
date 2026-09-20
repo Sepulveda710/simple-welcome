@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <!-- Defensa en profundidad: aunque todo el HTML externo (artículos,
+       feeds) ya se sanitiza antes de llegar aquí (ver src/modo-lectura.js
+       y escaparHtml en renderer.js), esto bloquea cualquier script/manejador
+       de eventos inline que se nos escape igual — script-src 'self' no
+       permite <script> inline ni onerror="", solo los .js propios de la
+       app. style-src necesita 'unsafe-inline' porque varias tarjetas
+       (recordatorios, fuentes) usan style="background: ..." con el color
+       elegido; no ejecuta código, así que el riesgo real es mínimo.
+       img-src va abierto porque las miniaturas/favicons vienen de
+       cualquier CDN de noticias o de Google Favicons — no hay una lista
+       fija de dominios posible ahí. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src https: http: data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none';" />
+  <title>Simple Welcome</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div class="contenedor" id="contenedor">
+
+  <!-- Aviso de conexión: oculto hasta que navigator.onLine detecta que se
+       cayó internet (ver actualizarEstadoConexion en renderer.js). Vive
+       aquí, fuera de #saludo y #modo-lectura, para que se vea sin importar
+       en qué pantalla estés. -->
+  <div id="banner-conexion" class="banner-conexion oculto"></div>
+
+  <section id="saludo" class="tarjeta encabezado-inicio">
+    <div>
+      <p class="fecha" id="fecha">Cargando fecha…</p>
+      <h1 id="mensaje">Cargando…</h1>
+      <p class="hora" id="hora"></p>
+    </div>
+    <div class="acciones-encabezado">
+      <button id="alternar-tema" class="boton-icono-encabezado" title="Cambiar entre modo claro y oscuro"></button>
+      <button id="abrir-configuracion" class="boton-icono-encabezado" title="Configuración">
+        <i class="icono-fluent" aria-hidden="true">&#xE713;</i>
+      </button>
+      <button id="abrir-guardados" class="boton-icono-encabezado" title="Guardados">
+        <i class="icono-fluent" aria-hidden="true">&#xE734;</i>
+      </button>
+      <div class="widget-clima oculto" id="widget-clima">
+        <span id="icono-clima"></span>
+        <span id="temperatura-clima"></span>
+      </div>
+      <div class="avatar-usuario" id="avatar-usuario"></div>
+    </div>
+  </section>
+
+  <div class="fila-principal" id="fila-principal">
+    <div class="columna-izquierda" id="columna-izquierda">
+      <section class="tarjeta" id="tarjeta-calendario">
+        <div class="cabecera-calendario">
+          <button id="mes-anterior" class="boton-icono-encabezado" title="Mes anterior">‹</button>
+          <h2 id="titulo-mes"></h2>
+          <div class="grupo-derecha-calendario">
+            <button id="expandir-calendario" class="boton-icono-encabezado" title="Ver calendario completo">
+              <i class="icono-fluent" aria-hidden="true">&#xE740;</i>
+            </button>
+            <button id="mes-siguiente" class="boton-icono-encabezado" title="Mes siguiente">›</button>
+          </div>
+        </div>
+
+        <div class="grid-dias-semana">
+          <span>Dom</span><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span>
+        </div>
+        <div id="grid-calendario" class="grid-calendario"></div>
+
+        <div class="seccion-recordatorios">
+          <h3 id="titulo-dia-seleccionado"></h3>
+          <div id="lista-recordatorios" class="lista-recordatorios"></div>
+          <button id="abrir-form-recordatorio" class="boton-mas-recordatorio">+ Nuevo recordatorio</button>
+          <div id="form-recordatorio" class="form-recordatorio formulario-colapsable colapsado">
+            <input type="text" id="input-recordatorio" placeholder="Título del recordatorio…" maxlength="80" />
+            <div class="colores-recordatorio" id="colores-recordatorio"></div>
+            <button id="agregar-recordatorio" class="boton-cargar-mas">Agregar</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Chía: por ahora solo muestra una carita fija y la cita del día
+           (ver src/cita.js). La idea a futuro (muy a futuro, no diseñada
+           todavía) es que sea un personaje con el que se pueda interactuar
+           usando una IA local — esto es solo la base visual sobre la que
+           se construiría eso después. -->
+      <section class="tarjeta tarjeta-chia" id="tarjeta-chia">
+        <pre class="cara-chia" id="cara-chia" aria-hidden="true"></pre>
+        <p class="nombre-chia">Chía</p>
+        <p class="cita-del-dia" id="cita-del-dia"></p>
+      </section>
+    </div>
+
+    <div class="columna-noticias">
+      <div class="cabecera-noticias">
+        <div id="pestanas-categoria" class="pestanas-categoria"></div>
+        <button id="abrir-fuentes" class="boton-icono-encabezado" title="Ver por fuente">
+          <i class="icono-fluent" aria-hidden="true">&#xE71D;</i>
+        </button>
+      </div>
+      <div id="lista-noticias" class="lista-noticias">
+        <p class="estado">Cargando noticias…</p>
+      </div>
+      <div id="zona-cargar-mas" class="zona-cargar-mas"></div>
+    </div>
+  </div>
+
+  <!-- Modo lectura: oculto hasta que se abre un artículo -->
+  <div id="modo-lectura" class="oculto modo-lectura">
+
+    <aside class="barra-lateral" id="barra-lateral">
+      <div class="cabecera-barra">
+        <button id="cerrar-lectura"><span aria-hidden="true">←</span> <span class="texto-colapsable">Volver</span></button>
+        <button id="alternar-barra" title="Ocultar/mostrar lista">⟨</button>
+      </div>
+      <div id="resumen-barra-lateral" class="resumen-barra-lateral texto-colapsable"></div>
+      <div id="lista-lateral" class="lista-lateral texto-colapsable"></div>
+    </aside>
+
+    <div class="panel-articulo" id="panel-articulo">
+      <div class="encabezado-articulo" id="encabezado-articulo">
+        <div class="cabecera-articulo">
+          <div class="marca-fuente">
+            <img class="favicon-fuente" id="favicon-fuente" alt="" aria-hidden="true" onerror="this.style.visibility='hidden'">
+            <span class="nombre-fuente" id="lectura-sitio"></span>
+          </div>
+          <div class="navegacion-articulo">
+            <button id="articulo-anterior" class="boton-nav"><i class="icono-fluent" aria-hidden="true">&#xE76B;</i> Anterior</button>
+            <button id="articulo-siguiente" class="boton-nav">Siguiente <i class="icono-fluent" aria-hidden="true">&#xE76C;</i></button>
+            <button id="actualizar-articulo" class="boton-nav" title="Volver a intentar cargar este artículo"><i class="icono-fluent" aria-hidden="true">&#xE72C;</i></button>
+            <button id="guardar-articulo" class="boton-nav" title="Guardar para después"><i class="icono-fluent" aria-hidden="true">&#xE734;</i></button>
+            <button id="compartir-articulo" class="boton-nav" title="Copiar enlace"><i class="icono-fluent" aria-hidden="true">&#xE72D;</i></button>
+            <button id="alternar-calido" class="boton-nav" title="Modo cálido de lectura"><i class="icono-fluent" aria-hidden="true">&#xE706;</i></button>
+            <button id="abrir-externo" class="boton-nav" title="Abrir en el navegador"><i class="icono-fluent" aria-hidden="true">&#xE8A7;</i></button>
+          </div>
+        </div>
+        <h2 id="lectura-titulo"></h2>
+      </div>
+      <div class="area-scroll" id="area-scroll">
+        <div id="lectura-contenido" class="contenido-articulo"></div>
+      </div>
+    </div>
+
+    <!-- Fuera de .panel-articulo a propósito: ese panel tiene backdrop-filter
+         + overflow:hidden, y backdrop-filter hace que un position:fixed
+         adentro se posicione (y se recorte) contra ÉL en vez de contra la
+         ventana. #modo-lectura no tiene filter/transform propio, así que
+         aquí sí funciona como position:fixed normal. -->
+    <div id="pildora-seleccion" class="pildora-seleccion">
+      <button id="pildora-ia" class="boton-pildora" title="Resumir con IA">🪄</button>
+      <button id="pildora-traducir" class="boton-pildora" title="Traducir">🌐</button>
+      <button id="pildora-copiar" class="boton-pildora" title="Copiar"><i class="icono-fluent" aria-hidden="true">&#xE8C8;</i></button>
+    </div>
+
+  </div>
+
+  <!-- Panel de configuración: oculto hasta que se abre -->
+  <div id="panel-configuracion" class="oculto capa-configuracion">
+    <div id="contenido-configuracion" class="tarjeta contenido-configuracion">
+      <div class="cabecera-configuracion">
+        <h2>Configuración</h2>
+        <button id="cerrar-configuracion" class="boton-nav">✕</button>
+      </div>
+
+      <section class="grupo-configuracion">
+        <h3 class="titulo-grupo-configuracion"><span class="icono-grupo-configuracion">👤</span> Perfil y clima</h3>
+
+        <div class="fila-configuracion">
+          <label class="campo-configuracion">
+            <span>Tu nombre</span>
+            <input type="text" id="input-nombre" />
+          </label>
+          <label class="campo-configuracion">
+            <span>Ciudad (para el clima)</span>
+            <input type="text" id="input-ciudad" placeholder="Ej. Tapachula, Chiapas" />
+          </label>
+        </div>
+
+        <div class="fila-configuracion">
+          <label class="campo-configuracion">
+            <span>Unidad de temperatura</span>
+            <select id="input-unidad-temperatura">
+              <option value="celsius">°C — Celsius</option>
+              <option value="fahrenheit">°F — Fahrenheit</option>
+            </select>
+          </label>
+          <label class="campo-configuracion">
+            <span>Formato de hora</span>
+            <select id="input-formato-hora">
+              <option value="12">12 horas (2:30 p. m.)</option>
+              <option value="24">24 horas (14:30)</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <section class="grupo-configuracion">
+        <h3 class="titulo-grupo-configuracion"><span class="icono-grupo-configuracion">🎛️</span> Interfaz y noticias</h3>
+
+        <div class="fila-configuracion">
+          <label class="campo-configuracion">
+            <span>Tema</span>
+            <select id="input-tema">
+              <option value="claro">Claro</option>
+              <option value="oscuro">Oscuro</option>
+            </select>
+          </label>
+          <label class="campo-configuracion">
+            <span>Noticias por página</span>
+            <select id="input-noticias-pagina">
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="30">30</option>
+            </select>
+          </label>
+        </div>
+
+        <label class="campo-configuracion campo-interruptor">
+          <span>Modo cálido al leer noticias <small>(reduce fatiga visual — independiente del tema)</small></span>
+          <span class="interruptor"><input type="checkbox" id="input-modo-calido-lectura" /><span class="interruptor-riel"></span></span>
+        </label>
+      </section>
+
+      <section class="grupo-configuracion">
+        <h3 class="titulo-grupo-configuracion"><span class="icono-grupo-configuracion cara-chia">[ ^ - ^ ]</span> Asistente Chía</h3>
+
+        <div class="campo-configuracion">
+          <span>Cara predeterminada</span>
+          <div id="selector-caras-chia" class="selector-caras-chia"></div>
+        </div>
+      </section>
+
+      <hr />
+
+      <button id="restablecer-leidos" class="boton-nav boton-ancho">Restablecer estado de lectura</button>
+
+      <hr />
+
+      <section class="grupo-configuracion seccion-fuentes">
+        <h3 class="titulo-grupo-configuracion"><span class="icono-grupo-configuracion">📰</span> Mis fuentes de noticias</h3>
+        <div id="lista-fuentes" class="lista-fuentes"></div>
+        <button id="abrir-form-fuente" class="boton-mas-recordatorio">+ Agregar fuente</button>
+        <div id="form-fuente" class="formulario-colapsable colapsado">
+          <label class="campo-configuracion">
+            <span>Nombre</span>
+            <input type="text" id="input-nombre-fuente" placeholder="Ej. Espresso Matutino" />
+          </label>
+          <label class="campo-configuracion">
+            <span>URL del RSS</span>
+            <input type="text" id="input-url-fuente" placeholder="https://…" />
+          </label>
+          <label class="campo-configuracion">
+            <span>Categoría</span>
+            <input type="text" id="input-categoria-fuente" placeholder="Ej. Economía" />
+          </label>
+          <label class="campo-configuracion">
+            <span>Color de identidad</span>
+            <input type="color" id="input-color-fuente" value="#0067c0" />
+          </label>
+          <button id="guardar-nueva-fuente" class="boton-cargar-mas">Guardar fuente</button>
+        </div>
+      </section>
+
+      <div class="acciones-configuracion">
+        <button id="restablecer-configuracion" class="boton-nav">Restablecer predeterminados</button>
+        <button id="guardar-configuracion" class="boton-cargar-mas">Guardar cambios</button>
+      </div>
+
+      <hr />
+
+      <div class="acerca-de">
+        <p class="acerca-de-titulo">Simple Welcome</p>
+        <p class="acerca-de-version" id="acerca-de-version">Cargando versión…</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calendario expandido: oculto hasta que se abre -->
+  <div id="capa-calendario-expandido" class="oculto capa-configuracion">
+    <div id="modal-calendario-grande" class="tarjeta modal-calendario-grande">
+      <div class="cabecera-calendario">
+        <button id="mes-anterior-grande" class="boton-icono-encabezado" title="Mes anterior">‹</button>
+        <h2 id="titulo-mes-grande"></h2>
+        <button id="mes-siguiente-grande" class="boton-icono-encabezado" title="Mes siguiente">›</button>
+      </div>
+
+      <div class="contenido-modal-calendario">
+        <div class="columna-calendario-grande">
+          <div class="grid-dias-semana">
+            <span>Dom</span><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span>
+          </div>
+          <div id="grid-calendario-grande" class="grid-calendario grid-calendario-grande"></div>
+        </div>
+
+        <div class="columna-detalle-dia">
+          <button id="cerrar-calendario-expandido" class="boton-nav boton-cerrar-modal" title="Cerrar">✕</button>
+          <h3 id="titulo-dia-seleccionado-grande"></h3>
+          <div id="lista-recordatorios-grande" class="lista-recordatorios"></div>
+          <button id="abrir-form-recordatorio-grande" class="boton-mas-recordatorio">+ Nuevo recordatorio</button>
+          <div id="form-recordatorio-grande" class="form-recordatorio formulario-colapsable colapsado">
+            <input type="text" id="input-recordatorio-grande" placeholder="Título del recordatorio…" maxlength="80" />
+            <input type="time" id="input-hora-recordatorio-grande" />
+            <div class="colores-recordatorio" id="colores-recordatorio-grande"></div>
+            <button id="agregar-recordatorio-grande" class="boton-cargar-mas">Agregar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Guardados: oculto hasta que se abre -->
+  <div id="capa-guardados" class="oculto capa-configuracion">
+    <div id="contenido-guardados" class="tarjeta contenido-guardados">
+      <div class="cabecera-configuracion">
+        <h2>Guardados</h2>
+        <button id="cerrar-guardados" class="boton-nav">✕</button>
+      </div>
+      <div id="lista-guardados" class="lista-guardados"></div>
+    </div>
+  </div>
+
+  <!-- Filtrar por fuente: oculto hasta que se abre -->
+  <div id="capa-fuentes" class="oculto capa-configuracion">
+    <div id="contenido-fuentes" class="tarjeta contenido-guardados">
+      <div class="cabecera-configuracion">
+        <h2>Ver por fuente</h2>
+        <button id="cerrar-fuentes" class="boton-nav">✕</button>
+      </div>
+      <div id="grid-fuentes" class="grid-fuentes"></div>
+    </div>
+  </div>
+
+  <!-- Ayuda de atajos: oculta hasta que se abre -->
+  <div id="capa-ayuda-atajos" class="oculto capa-configuracion">
+    <div id="contenido-ayuda-atajos" class="tarjeta contenido-configuracion">
+      <div class="cabecera-configuracion">
+        <h2>Atajos de teclado</h2>
+        <button id="cerrar-ayuda-atajos" class="boton-nav">✕</button>
+      </div>
+      <ul class="lista-atajos">
+        <li><kbd>Alt</kbd>+<kbd>←</kbd> / <kbd>Backspace</kbd> — Volver al inicio</li>
+        <li><kbd>Ctrl</kbd>+<kbd>1</kbd>–<kbd>9</kbd> — Ir a esa pestaña</li>
+        <li><kbd>Esc</kbd> — Cerrar ventana emergente</li>
+        <li><kbd>Ctrl</kbd>+<kbd>N</kbd> — Nuevo recordatorio</li>
+        <li><kbd>Ctrl</kbd>+<kbd>R</kbd> / <kbd>F5</kbd> — Actualizar noticias</li>
+        <li><kbd>M</kbd> — Marcar leída (con el mouse encima)</li>
+        <li><kbd>J</kbd> / <kbd>K</kbd> — Siguiente / anterior artículo</li>
+        <li><kbd>Ctrl</kbd>+<kbd>,</kbd> — Abrir Configuración</li>
+        <li><kbd>G</kbd> — Guardar artículo</li>
+        <li><kbd>C</kbd> — Compartir (copiar enlace)</li>
+        <li><kbd>Inicio</kbd> — Ir a hoy en el calendario</li>
+        <li><kbd>?</kbd> — Esta ayuda</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<!-- Botón para cerrar el panel de búsqueda con IA (ver src/panel-ia.js).
+     El panel en sí no es HTML de esta página — es una WebContentsView aparte
+     que Electron dibuja encima, por eso el botón para cerrarlo vive acá y no
+     dentro del panel. -->
+<button id="boton-cerrar-panel-ia" class="boton-cerrar-panel-ia" title="Cerrar búsqueda">✕</button>
+
+  <script src="expresiones-chia.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>

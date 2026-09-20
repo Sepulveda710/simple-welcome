@@ -1,0 +1,524 @@
+# Contexto del proyecto — léeme antes de tocar código
+
+Esta app se construyó en conversación con otra instancia de Claude (en claude.ai,
+sin poder ejecutar la app de verdad — solo revisando sintaxis a ciegas). Ahora
+que trabajas tú con acceso real a la terminal, puedes y debes correr la app,
+ver errores reales, y corregir sobre la marcha — eso es justo lo que antes no
+se podía hacer.
+
+## Nombre y versión
+
+La app se llama **Simple Welcome** (antes "app-bienvenida" — el nombre del
+paquete en `package.json` y el `<title>` de `index.html` ya se actualizaron;
+la carpeta en disco se quedó con su nombre viejo a propósito, renombrarla es
+decisión de Abel, no algo para hacer sin que lo pida). Ícono: una "S"
+estilizada en `assets/icono.svg` (fuente del ícono; `assets/icono.png` es
+el render usado de verdad en `main.js`, regenerable con
+`node_modules\.bin\electron.cmd scripts\generar-icono.js` si el SVG cambia).
+
+**Versionado (Beta X.Y, guardado en `package.json` como X.Y.0):** Abel dejó
+esto a criterio de quien trabaje en el código — sube tú misma la versión
+según el tamaño del cambio, sin preguntar cada vez. Corrección explícita
+de Abel (2026-09-12): **subir X (el número principal) casi nunca** — se
+subió a Beta 6.0 por un rediseño de Configuración y Abel lo consideró
+demasiado pronto para un cambio de número principal; se revirtió a
+seguir la serie de Y (5.3). Regla real:
+- Sube **Y** (ej. 5.2 → 5.3) para CASI TODO: features nuevas completas,
+  rediseños de una pantalla, varios cambios chicos juntos, fixes,
+  ajustes visuales — este es el bump por defecto.
+- Sube **X** (ej. 4.0 → 5.0) SOLO para algo dramáticamente más grande que
+  cualquiera de lo anterior — un cambio de arquitectura de fondo, o una
+  acumulación tan grande que Y ya se sentiría absurdo (¿5.19?). Ante la
+  duda, es Y — Abel prefiere corregir un X de más rebajándolo que ver la
+  beta subir de número principal seguido.
+- Estamos en **Beta 5.7** al momento de escribir esto (4.0 → 4.1: separar
+  el tema claro/oscuro del modo cálido de lectura, que antes compartían la
+  misma variable — ver "Decisiones técnicas importantes" abajo. 4.1 → 4.2:
+  mejoras a la barra lateral del modo lectura. 4.2 → 5.0: portada del
+  artículo + tinte adaptativo de color — este X sí se quedó, fue antes de
+  la corrección de arriba. 5.0 → 5.1: splash de bienvenida al arrancar
+  — **quitado por completo en 5.6, ver abajo; no existe en el código
+  ahora mismo aunque las notas de 5.1 abajo lo describan en presente**.
+  5.1 → 5.2: auditoría de seguridad y optimizaciones. 5.2 → 5.3: rediseño
+  completo de Configuración. 5.3 → 5.4: Panel de desarrollo
+  (Ctrl+Shift+D) — revertido en 5.5. 5.4 → 5.5: se quitó el Panel de
+  desarrollo (le pasó justo el bug que se supone debía evitar). 5.5 →
+  5.6: el splash SEGUÍA atascándose incluso arreglado (una segunda
+  captura de Abel lo confirmó) — se quitó por completo, ver "Estado
+  actual" al final de este archivo antes de tocar nada relacionado.
+  5.6 → 5.7: la app quedó lista para empaquetarse e instalarse de verdad,
+  con actualización automática — ver "Estado actual").
+
+## Cómo le gusta trabajar a Abel (el usuario)
+
+- **"Anota, no ejecutes"**: cuando Abel dice "anota" o "apunta" algo, es una
+  señal explícita de que quiere ir acumulando una lista de pendientes para
+  ejecutarlos todos juntos después — NO se debe tocar código en ese momento,
+  ni aunque el cambio parezca trivial o urgente. Solo se ejecuta cuando dice
+  "ejecuta", "continúa", o algo equivalente. Esto es una preferencia de
+  workflow explícita, respétala igual que la anterior instancia aprendió a
+  respetarla (después de una corrección directa de Abel).
+- Le gusta entender el **por qué** de las cosas, no solo el qué — explica
+  brevemente la causa raíz de los bugs, no solo la corrección.
+- Antes de implementar features grandes o ambiguas, es mejor preguntar/aclarar
+  el diseño primero (ver ejemplos abajo) en vez de asumir y construir.
+- A veces pega prompts que él mismo le dio a Gemini pidiendo código o
+  sugerencias de diseño. Revísalos con sentido crítico: Gemini no tiene
+  acceso al código real de este proyecto, así que a veces asume estructuras
+  HTML/CSS que no existen aquí, o sugiere cosas que ya están implementadas
+  de otra forma, o que chocan con decisiones ya tomadas (ver historial abajo).
+  Avísale cuando eso pase, en vez de aplicar el código tal cual.
+
+## Prioridades del proyecto (en orden)
+
+1. **Funcionamiento primero, estética después.** Así se construyó desde el
+   día uno: primero la base funcional, después el pulido visual (Fluent
+   Design, animaciones, Mica). Si hay que elegir entre "que funcione bien" y
+   "que se vea perfecto", gana lo primero.
+2. **Arquitectura modular, sin duplicar lógica.** Cada archivo en `src/` tiene
+   una sola responsabilidad (ver `main.js` para ver cómo se conectan). Antes
+   de escribir una función nueva, revisa si ya existe algo parecido que se
+   pueda reutilizar/parametrizar en vez de copiar-pegar con variaciones.
+3. **Todo lo editable va en `config/`, no hardcodeado.** Fuentes de noticias,
+   nombre de usuario, ciudad, tema — todo vive en `config/*.json` o se
+   gestiona desde la interfaz (Configuración), no como constantes en el código.
+
+## Decisiones técnicas importantes (no las reviertas sin saber por qué)
+
+- **El tema (claro/oscuro) y el modo cálido de lectura son dos estados
+  independientes, a propósito** — NO los vuelvas a fusionar en una sola
+  variable. Antes `config.tema` aceptaba 'claro'/'oscuro'/'calido' y el
+  botón de modo cálido cambiaba ese mismo valor; el bug real era que si
+  estabas en oscuro y prendías el modo cálido, TODA la app volvía a claro
+  de golpe (porque nada más definía cómo se ve "oscuro + cálido" a la vez).
+  Ahora `config.tema` solo es 'claro'/'oscuro' (aplicado en
+  `document.documentElement.dataset.tema`) y `config.modoCalidoLectura` es
+  un booleano aparte (aplicado como clase `.calido` en `#modo-lectura`,
+  ver styles.css) — así conviven cualquier combinación de los dos.
+- **Electron fijado a `>=38.0.0`** en `package.json` (no bajarlo). Versiones
+  anteriores tienen un bug real de Chromium/Electron donde cualquier ventana
+  translúcida (con `backgroundMaterial`) queda forzada a no-redimensionable.
+- **`backgroundMaterial: 'mica'` sin `transparent: true`** en `main.js`. Se
+  probó agregar `transparent: true` (sugerido por Gemini) y se descartó a
+  propósito: es la combinación con más bugs reportados de Mica en Electron.
+- **`Menu.setApplicationMenu(null)`** en `main.js`. Sin esto, Ctrl+R y F5
+  quedan atados al "Recargar" del menú por defecto de Electron (recarga toda
+  la ventana) en vez de a nuestro atajo personalizado que solo refresca los
+  datos.
+- El body es `background: transparent` para dejar ver el Mica nativo — si
+  algún día Mica no se ve, primero descarta que sea un problema de Windows
+  (Configuración > Accesibilidad > Efectos visuales, temas de alto
+  contraste, drivers de video) antes de tocar el código; ya pasó una vez y
+  no era un bug nuestro.
+- El modo lectura usa `position: absolute` para el encabezado del artículo
+  (flota sobre el contenido, no lo empuja) — esto fue a propósito para
+  evitar que arrastrar la barra de scroll se sintiera trabado (el bug
+  original era con `max-height` cambiando el alto scrolleable en cada frame).
+
+## Estructura rápida
+
+```
+main.js              → arranca la ventana, conecta todos los módulos por IPC
+preload.js            → puente seguro (contextIsolation) entre main y la interfaz
+config/
+  fuentes.json        → fuentes de RSS (editable desde Configuración > Mis fuentes)
+  usuario.json        → nombre, ciudad, tema, noticias por página
+src/                  → un módulo por responsabilidad (lector-rss, modo-lectura,
+                         estado-lectura, configuracion, recordatorios, clima,
+                         cita, guardados, gestion-fuentes, saludo, ventana-estado)
+renderer/
+  index.html          → toda la estructura (una sola página, varios paneles/modales)
+  styles.css          → todo el CSS, con variables de tema en :root
+  renderer.js          → toda la lógica de interfaz (sin build step, JS plano)
+```
+
+No hay paso de compilación (no bundler, no framework) — es Electron +
+HTML/CSS/JS planos a propósito, para que sea fácil de razonar sin herramientas
+extra.
+
+## Estado actual
+
+La app está en **Beta 4.0** (ver "Nombre y versión" arriba). Lo último
+implementado (sesión 2026-09-10/11, la que subió de Beta 3 a Beta 4):
+
+- **Píldora de selección en modo lectura** (`#pildora-seleccion`): al
+  seleccionar texto en un artículo aparece un mini-menú flotante (copiar,
+  traducir [pendiente de conectar], y buscar con IA).
+- **Panel de búsqueda con IA** (`src/panel-ia.js`): el botón de la píldora
+  abre una `WebContentsView` acoplada al borde derecho de la ventana con una
+  búsqueda de Google en Modo IA (`udm=50`) para el texto seleccionado — no
+  es una API, es la página real, sin recortar. Se cierra con el botón ✕
+  flotante (`#boton-cerrar-panel-ia`).
+- **Chía** (`renderer/expresiones-chia.js` + tarjeta debajo del calendario):
+  mascota con carita ASCII (formato fijo `[ ojoIzq boca ojoDer ]`, 5 piezas
+  separadas por espacios — cualquier expresión nueva debe seguir ese formato
+  para que el parpadeo automático le funcione). Por ahora solo respira y
+  parpadea en estado "relajado"; el catálogo completo de 20 expresiones ya
+  existe para cuando haya algo real que decida el estado de ánimo (ver
+  `mostrarExpresionChia` en `renderer.js`).
+- **Aviso de conexión**: Chía se pone "triste" y aparece un banner
+  (`#banner-conexion`) cuando `navigator.onLine` es `false`; al reconectar
+  vuelve sola a "relajado" con un aviso breve de "de vuelta en línea".
+- **Filtro "Ver por fuente"** (`#grid-fuentes`): además de las pestañas por
+  categoría, se puede filtrar la lista de noticias a un solo sitio desde un
+  grid de tarjetas con el color de identidad de cada fuente.
+- **Cita del día en español**: `src/cita.js` usa FraseDelDia
+  (`frasedeldia.azurewebsites.net`) en vez de ZenQuotes (que solo da citas
+  en inglés) — es un proyecto de un solo mantenedor sin SLA, así que puede
+  dejar de responder algún día; ya está pensado para fallar en silencio si
+  pasa (el widget de Chía simplemente no muestra cita ese día).
+- **Fuentes de RSS**: se quitó Genbeta (dejó de publicar hace 8 meses, no es
+  un problema de la app) y El País Economía (Abel prefiere que Economía sea
+  100% de medios mexicanos); se agregaron SoftZone (Tecnología) y Expansión,
+  Infobae Economía (luego quitada por Abel) y La Jornada Economía (Economía).
+  Antes de agregar una fuente nueva, probar que el feed responda 200 Y que
+  tenga artículos de fecha reciente — un feed puede seguir respondiendo
+  aunque el medio ya no publique nada nuevo (así se descubrió lo de Genbeta).
+
+**Sesión 2026-09-11 (Beta 4.1 → 4.2): mejoras a la barra lateral del modo
+lectura**, a partir de una lluvia de ideas con Abel:
+
+- **Bug corregido**: `articulosModoLectura` (lo que ve la barra lateral y
+  Anterior/Siguiente) ignoraba `fuenteActiva` — si filtrabas por un solo
+  medio con "Ver por fuente" y abrías una noticia, la barra lateral mostraba
+  igual toda la categoría (o todo, en "Para ti hoy") en vez de solo ese
+  medio. Ahora `fuenteActiva` manda primero, igual que en la lista principal
+  (ver `abrirModoLectura` en `renderer.js`).
+- **Indicador de posición y sin leer** (`#resumen-barra-lateral`): "3 de 12 ·
+  8 sin leer" arriba de la lista, calculado sobre `articulosModoLectura` —
+  siempre refleja el filtro activo, no el total de noticias.
+- **Separadores de fecha** ("Hoy" / "Ayer" / fecha) en la barra lateral,
+  insertados sin reordenar el array (ya viene ordenado por fecha desde
+  `lector-rss.js`) para no romper el orden de Anterior/Siguiente.
+- **Restaurar scroll** de la lista principal (`scrollPrincipalGuardado`) al
+  volver del modo lectura — `pintarListaDesdeCache()` reconstruye la lista
+  desde cero y podía dejarte en otra posición si el alto de página cambió.
+- **Auto-colapso en ventanas angostas** (`window.innerWidth < 900`): la
+  barra lateral arranca colapsada si no hay espacio, en vez de competir con
+  el artículo. El atajo J/K para Anterior/Siguiente ya existía de antes.
+
+**Sesión 2026-09-11 (Beta 4.2 → 5.0): portada del artículo + tinte
+adaptativo de color**, con boceto visual acordado con Abel antes de
+construir (bocetos de intensidad y alcance en un artifact aparte):
+
+- **Portada híbrida** (`insertarPortadaArticulo` en `renderer.js`): la
+  miniatura del feed (`articulo.imagen`, la misma de las tarjetas y la
+  barra lateral) siempre se muestra como portada del artículo — ya no
+  depende de si Readability la conservó dentro del `textoHtml`. Si sí la
+  conservó (misma ruta de imagen), se quita del texto extraído para no
+  duplicarla (`mismaImagen`, compara por `pathname` porque el feed y el
+  artículo casi nunca traen la URL idéntica — cambian los parámetros de
+  tamaño).
+- **Tinte adaptativo** (`src/color-articulo.js` + `aplicarTinteArticulo`
+  en `renderer.js`): color dominante de la portada aplicado a toda la
+  ventana del modo lectura (barra lateral incluida — Abel eligió alcance
+  "toda la ventana" e intensidad "Medio" entre los bocetos). El cálculo
+  corre en el proceso principal con `nativeImage` (no un `<canvas>` en el
+  renderer) porque leer píxeles de una imagen externa desde el renderer
+  choca con CORS — la mayoría de CDNs de noticias no manda
+  `Access-Control-Allow-Origin`. El algoritmo promedia el tono (hue) solo
+  de píxeles con saturación (ignora cielo/asfalto/fondos neutros) para
+  quedarse con lo que "destaca" en la foto, no un promedio gris. Solo
+  aplica en tema claro — el guard está en CSS
+  (`html[data-tema="claro"] #modo-lectura.con-tinte ...`), no solo en JS,
+  para que se apague solo si cambias de tema a media lectura. Se excluye
+  a propósito cuando el modo cálido de lectura está activo (`:not(.calido)`
+  en las reglas de `.panel-articulo`/`.encabezado-articulo`) — son dos
+  tratamientos de fondo que no deben mezclarse, mismo espíritu que la
+  separación tema/cálido de la sesión anterior.
+
+**Sesión 2026-09-11 (Beta 5.0 → 5.1): splash de bienvenida al arrancar**,
+a partir de un prompt/spec que Abel le había pedido a Gemini — Gemini
+asumió cosas que no existen en este proyecto (una "barra izquierda de
+IA" que en realidad es el calendario, un ícono de IA genérico en vez de
+Chía) y ya se corrigieron al construir:
+
+- **Una vez al día, no una vez por apertura** (pedido explícito de Abel):
+  `src/splash-estado.js` guarda la fecha de la última vez que se mostró
+  en un JSON aparte (mismo patrón que `ventana-estado.js`) y compara
+  contra el día calendario actual — `debeMostrarSplashHoy()` marca el día
+  como visto la primera vez que se llama, así que no hace falta una
+  función aparte para "marcar como visto".
+- **Reusa a Chía en vez de inventar un ícono de IA** — la cara del splash
+  es `EXPRESIONES_CHIA.muyFeliz` (`[ ^ U ^ ]`), el mismo catálogo de
+  `expresiones-chia.js` que ya existía.
+- **Tres fases coordinadas desde `reproducirSplashBienvenida()` en
+  `renderer.js`**: aparecer (fade+scale, CSS puro vía `@keyframes
+  splash-entrada`), permanecer 1.5s, desvanecerse hacia arriba, y luego
+  revelar `columna-izquierda` seguida 100ms después por `#saludo` (clases
+  `.preparando-entrada` → `.entrada-arranque`, reutilizando el keyframe
+  `entrada-fluent` que ya existía). Las tarjetas de noticias no se
+  tocaron: ya tenían su propia entrada escalonada de antes
+  (`crearTarjetaConRetraso`), Gemini pedía reinventar algo que ya estaba.
+- **Sin parpadeos**: el overlay es visible por defecto en el HTML (no
+  depende de que JS corra a tiempo) y `columna-izquierda`/`#saludo` se
+  ocultan de entrada, antes incluso de saber si hoy toca splash — están
+  tapados por el overlay durante esa consulta de todos modos. Si hoy ya
+  se mostró, todo eso se deshace al instante, sin animación.
+
+**Sesión 2026-09-11 (Beta 5.1 → 5.2): auditoría completa de seguridad y
+optimización**, pedida explícitamente por Abel ("audita mi programa con
+totalidad"). Hallazgo principal: el HTML de artículos/feeds externos se
+metía en la interfaz sin sanitizar en varios lugares — corregido de
+raíz, no parche superficial:
+
+- **`src/modo-lectura.js` sanitiza con DOMPurify** el HTML que devuelve
+  Readability antes de que cruce a la interfaz (reusa el mismo `window`
+  de jsdom que ya se creaba ahí) — antes, un feed comprometido podría
+  meter `<script>`, `onerror=""` o `href="javascript:..."` en el cuerpo
+  de un artículo y se ejecutaría tal cual en el renderer.
+- **`escaparHtml()` en `renderer.js`**, aplicado en los ~9 lugares donde
+  se arma `innerHTML` a mano con texto que no es literal nuestro: título/
+  fuente/categoría/imagen de artículos (vienen del feed RSS), nombre de
+  "Mostrando: X" al filtrar por fuente, nombre/categoría/color en "Mis
+  fuentes" y texto/hora/color de recordatorios (los escribe Abel a mano,
+  pero igual se sanean por si algún día se conectan a un calendario
+  externo — ver el pendiente de Outlook más abajo). Todo lo que ya usaba
+  `textContent` (como `#lectura-titulo`) no necesitaba esto — el problema
+  era solo en los `innerHTML` armados con template strings.
+- **`@mozilla/readability` actualizado de 0.5.0 a 0.6.0** — `npm audit`
+  marcó una vulnerabilidad real de denegación de servicio por regex
+  (GHSA-3p6v-hrg8-8qj7) en versiones anteriores; sin parche disponible sin
+  subir de versión. Confirmado que la API que usamos (`.parse()` con
+  `.title`/`.content`/`.siteName`) no cambió.
+- **CSP en `index.html`** (`script-src 'self'`, sin overrides): defensa en
+  profundidad — bloquea cualquier `<script>` inline o `onerror=""` que se
+  escapara de la sanitización de arriba, incluso si algún día se agrega
+  otro lugar que meta HTML externo sin pasar por `escaparHtml`/DOMPurify.
+- **`main.js`**: `abrirExterno` ahora valida que el enlace sea http(s)
+  antes de pasarlo a `shell.openExternal` (podía venir de un `<a href>`
+  dentro de un artículo externo); `will-navigate` bloqueado siempre (la
+  interfaz nunca necesita navegar de verdad, solo cambiar de artículo por
+  JS) y `setWindowOpenHandler` deniega ventanas nuevas — ambos evitan que
+  contenido externo mande la ventana principal a cargar algo remoto con
+  `preload.js` (y su `window.api`) todavía puesto encima.
+- **Optimizaciones**: `cacheArticulos` en `modo-lectura.js` ahora tiene un
+  tope de 60 artículos (FIFO) — antes crecía sin límite durante una sesión
+  larga; `guardados.js` ya no reescribe el archivo en disco en cada
+  apertura del panel si no había nada que depurar.
+- **Comentario desactualizado corregido** en `preload.js` (decía "estas
+  tres funciones" cuando ya son más de 20).
+
+**Pendiente de decisión (NO se tocó solo):** `src/configuracion.js` y
+`src/gestion-fuentes.js` guardan `config/usuario.json` y
+`config/fuentes.json` en la carpeta del propio proyecto (relativo a
+`__dirname`), no en `app.getPath('userData')` como el resto de los
+módulos de estado (`ventana-estado.js`, `estado-lectura.js`,
+`guardados.js`, `recordatorios.js`, `splash-estado.js`). Esto es a
+propósito según el README original (archivos editables a mano, junto al
+código) — pero si algún día se empaqueta la app con electron-builder (ya
+anotado como pendiente futuro), esa carpeta queda de solo lectura (ej.
+Program Files) y guardar cambios desde Configuración o "Mis fuentes"
+fallaría. Migrar a `userData` es sencillo pero cambia dónde vive el
+archivo que Abel edita a mano — hay que decidirlo con él, no asumirlo.
+
+**Sesión 2026-09-11/12 (Beta 5.2 → 5.3): rediseño completo de
+Configuración**, a partir de otro prompt/boceto de Gemini que Abel pidió
+opinar antes de construir — como con el splash, Gemini asumió cosas que
+no existen (una categorización de "cita del día" que la API de
+FraseDelDia probablemente ni soporta, dos campos de "Ubicación"
+redundantes). Esa parte de la cita del día NO se construyó a propósito
+(Abel lo pidió explícitamente excluir) — todo lo demás sí. (Esto arrancó
+como Beta 6.0 y se corrigió a 5.3 — ver la nota de versionado arriba,
+Abel pidió no subir el número principal tan seguido.):
+
+- **Version dinámica**: `acerca-de-version` ya no es texto fijo en
+  `index.html` (decía "0.1.0" mientras la app iba por Beta 5) — sale de
+  `app.getVersion()` (lee `package.json` solo, misma fuente que
+  `npm start`) vía IPC nueva `obtener-version-app`, mostrada como
+  "Beta X.Y".
+- **Nuevos campos en `config/usuario.json`** (ver `VALORES_POR_DEFECTO`
+  en `src/configuracion.js`): `formato24h`, `unidadTemperatura`
+  ('celsius'/'fahrenheit', ver `src/clima.js` — usa el param
+  `temperature_unit` de Open-Meteo), `caraChiaPredeterminada` (id de
+  `EXPRESIONES_CHIA`), `mostrarSaludoInicio` (apaga el splash sin
+  importar si "hoy toca" — ver `reproducirSplash` en `iniciar()`).
+- **Selector de cara de Chía**: el catálogo completo de 20 expresiones
+  como chips en Configuración — la elegida reemplaza el 'relajado' fijo
+  como cara "de reposo" (`caraChiaPredeterminada`, variable de módulo en
+  `renderer.js`); los estados contextuales (`triste` sin internet,
+  `muyFeliz` en el splash) la siguen pisando temporalmente sin tocarse.
+- **Toggle On/Off por fuente** (`src/gestion-fuentes.js`:
+  `alternarFuenteActiva`, campo `activa` en cada fuente — las guardadas
+  antes de este cambio se asumen `true` hasta que se apaguen a propósito):
+  apaga temporalmente un medio sin borrar su color/categoría/URL.
+  `lector-rss.js` filtra `activa !== false` antes de pedir noticias.
+  "Mis fuentes" se rediseñó como tarjetas en 2 columnas (franja de color
+  arriba + favicon real, mismo lenguaje visual que las tarjetas de "Ver
+  por fuente" en la pantalla principal — antes eran dos estilos distintos
+  para la misma idea) a pedido explícito de Abel, sobre el boceto de
+  Gemini.
+- **"Restablecer predeterminados"**: nueva `restablecerConfiguracion()`
+  en `configuracion.js` — reemplaza TODO el archivo por
+  `VALORES_POR_DEFECTO` (a diferencia de `guardarConfiguracion`, que
+  mezcla). Pide confirmación (`confirm()`) antes de aplicar. No toca
+  fuentes/leídos/guardados/recordatorios, solo esta pantalla.
+- **Reordenado visualmente en 4 grupos** (Perfil y clima / Interfaz y
+  noticias / Asistente Chía / Mis fuentes) en vez de una lista plana de
+  campos — panel más ancho (480px), interruptores Fluent en vez de
+  checkboxes nativos donde aplica.
+- Probado sin automatización de escritorio: se inyectó JS de prueba
+  temporalmente en `main.js` vía `webContents.executeJavaScript` (guardar
+  cambios, alternar una fuente, leer los resultados por consola) y se
+  quitó después — no dejar ese código si se vuelve a necesitar probar algo
+  similar, rehacerlo temporalmente.
+
+**Sesión 2026-09-12 (Beta 5.3 → 5.4 → 5.5): Panel de desarrollo,
+construido y luego revertido en la misma sesión** — Abel pidió una
+ventana con dev tools fáciles de usar para probar cosas sin esperar
+(ejemplo que dio: el splash de bienvenida). Se construyó en 5.4
+(Ctrl+Shift+D: reproducir splash a mano, selector de expresión de Chía,
+simular conexión, muestras de tinte, abrir DevTools de Chromium), pero el
+propio botón de "reproducir splash" dejó el overlay atascado a medio
+desvanecer (una captura de pantalla de Abel lo confirmó: fondo blanco
+difuminado sin texto/Chía visibles) — la causa real: nada impedía
+disparar `reproducirSplashBienvenida()` dos veces a la vez (doble clic,
+o clic mientras la anterior corría todavía), y dos corridas concurrentes
+se pisaban los `setTimeout`/clases entre sí. Abel pidió revertir el panel
+completo y dejar algo más simple. En 5.5:
+
+- **Se quitó TODO el Panel de desarrollo** (HTML, CSS, JS, el IPC de
+  DevTools, el atajo Ctrl+Shift+D) — si en el futuro hace falta algo así
+  de nuevo, construirlo sabiendo que necesita protegerse contra
+  reentradas desde el día uno (ver el punto siguiente).
+- **La causa real quedó corregida de todos modos**: `reproducirSplashBienvenida()`
+  ahora tiene un guard (`reproduciendoSplash`, con `try/finally` para
+  nunca quedarse trabado en `true` aunque algo lance un error a medio
+  camino) — una segunda llamada mientras la primera sigue corriendo
+  simplemente no hace nada, en vez de correr en paralelo y corromper el
+  estado de las clases CSS.
+- **En su lugar**: un botón simple, "▶ Probar animación de bienvenida",
+  dentro de Configuración > Asistente Chía — mismo resultado que pedía
+  Abel (probar el splash sin esperar al día siguiente), sin la superficie
+  extra del panel completo.
+- Sigue en pie el fix de `overlay.remove()` → `classList.add('oculto')`
+  de la sesión 5.4 (necesario para que el botón de Configuración pueda
+  reproducirlo más de una vez por sesión) — eso no era el bug, era
+  correcto y se quedó.
+- Probado con JS inyectado temporalmente en `main.js` vía
+  `webContents.executeJavaScript` (disparando el botón 5 veces seguidas
+  de golpe y confirmando que solo una corrida real ocurre y termina
+  limpia), quitado después de confirmar — sin automatizar clicks/pantalla
+  reales.
+
+**Sesión 2026-09-12 (Beta 5.5 → 5.6): el splash de bienvenida se quitó
+por completo — no existe en el código en este momento.** Con el guard de
+reentrada de 5.5 puesto, Abel lo probó igual y una SEGUNDA captura de
+pantalla mostró el mismo síntoma (overlay `--superficie-fuerte` blureado
+visible, sin Chía/texto, sin poder interactuar con nada salvo el scroll)
+— así que el guard no era la causa real, o no era la única. La sospecha
+más fuerte sin haberlo podido confirmar con consola en vivo: el
+`@keyframes splash-entrada` estaba declarado directo en la regla base de
+`.splash-contenido-bienvenida` (no en una clase que se agregara/quitara),
+así que el truco de `void contenido.offsetWidth` para forzar un reflow en
+`reproducirSplashBienvenida()` probablemente nunca reiniciaba de verdad
+esa animación — pudo estar fallando incluso en la primerísima vez que
+corría en el día, no solo al repetirla a mano. Abel pidió quitarlo entero
+en vez de seguir parchando a ciegas ("mejor quitamos lo de la animación,
+lo agreguemos después").
+
+Se quitó de raíz: el overlay y su contenido de `index.html`, todo el CSS
+(`@keyframes splash-entrada/salida`, `.preparando-entrada`/`.entrada-arranque`,
+que solo existían para esto), `reproducirSplashBienvenida()` y toda la
+lógica de decisión en `iniciar()`, el botón "Probar animación de
+bienvenida" y el toggle "Saludo animado al iniciar" de Configuración.
+`iniciar()` volvió a su forma simple de antes de la sesión 5.1 (columna-izquierda
+y saludo visibles desde el primer frame, sin ocultarlos nunca).
+
+**Lo que NO se tocó, a propósito, por si se retoma esto más adelante**:
+`src/splash-estado.js` (el conteo de "una vez al día") y su IPC en
+`main.js`/`preload.js` (`debeMostrarSplash`) se quedaron tal cual, sin
+usarse — inertes pero listos para reconectar. El campo
+`mostrarSaludoInicio` sigue en `VALORES_POR_DEFECTO` de
+`configuracion.js` por la misma razón. `caraChiaPredeterminada` y su
+selector en Configuración SÍ se quedaron activos — eso nunca fue parte
+del bug, es una feature aparte que funciona bien.
+
+Si se retoma el splash algún día: antes de reconstruirlo, verificar con
+DevTools real (F12/inspeccionar) qué está pasando con la animación de
+`.splash-contenido-bienvenida` en vivo — no repetir el patrón de esta
+sesión de arreglar a ciegas sin consola. Vale la pena considerar
+`element.getAnimations()` (Web Animations API) en vez de CSS
+`animation` + reflow manual, que es más fácil de reiniciar de forma
+confiable por código.
+
+**Sesión 2026-09-15 (Beta 5.6 → 5.7): la app quedó lista para
+empaquetarse, instalarse y actualizarse sola** — Abel preguntó cómo
+asegurar que futuras ideas se puedan instalar encima sin perder datos ni
+reinstalar a mano; se armó de una vez con la idea de "luego vamos a
+chambear con GitHub" como siguiente paso (repo/owner reales, primer
+release — eso quedó pendiente para esa sesión).
+
+- **Se migraron `config/usuario.json` y `config/fuentes.json` a
+  `%APPDATA%\simple-welcome`** (`src/configuracion.js` y
+  `src/gestion-fuentes.js`) — antes vivían junto al código de la app, así
+  que un instalador que actualiza la app los habría borrado en cada
+  actualización (el mismo problema que ya evitaban `estado-lectura.json`,
+  `guardados.json`, etc. desde siempre). `migrarSiHaceFalta()` copia (no
+  mueve) el contenido viejo la primera vez que corre esta versión — ya
+  confirmado en la práctica: el nombre, ciudad y las 8 fuentes de Abel
+  pasaron completos. Los archivos viejos en `config/` se quedan como
+  semilla de esa migración, ahora en `.gitignore` (tienen datos
+  personales: nombre, ciudad, coordenadas).
+- **`nativeTheme.themeSource = obtenerConfiguracion()...`** se movió de
+  nivel de módulo (arriba de todo en `main.js`) a dentro de
+  `app.whenReady()` — ahora que `obtenerConfiguracion()` usa
+  `app.getPath('userData')`, necesita que la app esté lista antes de
+  llamarse.
+- **`app.setName('simple-welcome')` fijado explícitamente al principio de
+  `main.js`**, antes de cualquier require — sin esto, si algún día
+  `productName` ("Simple Welcome", con mayúsculas y espacio, para el
+  instalador/accesos directos) se filtrara a `app.getName()`, la carpeta
+  de `userData` cambiaría de nombre y toda la configuración/noticias
+  leídas/guardados "desaparecerían" de la vista de la app (seguirían en
+  disco, solo que en la carpeta vieja). Este único candado evita esa
+  clase entera de bug para siempre, pase lo que pase con el branding.
+- **`electron-builder` (empaquetador) + `electron-updater` (actualizador)
+  instalados**, configuración en `package.json` (`"build"`): NSIS
+  (`oneClick: false, perMachine: false` — instala por usuario, sin pedir
+  permisos de administrador, necesario para que las actualizaciones
+  automáticas se instalen solas sin ventana de UAC cada vez),
+  `publish.provider: "github"` con `owner`/`repo` en placeholder
+  (`TU-USUARIO-DE-GITHUB`/`TU-REPO`) hasta que exista el repo real.
+  `config/` excluido del paquete a propósito (`"!config/**"` en
+  `"files"`) — no tiene caso empaquetar los datos personales de Abel como
+  si fueran una plantilla del producto, y ya no hace falta: la migración
+  ya corrió, `userData` ya tiene todo.
+- **`autoUpdater.checkForUpdatesAndNotify()`** en `main.js`, dentro de
+  `app.whenReady()`, con guard `if (app.isPackaged)` — corriendo con
+  `npm start` (como Abel y yo trabajamos siempre) esto no hace nada; solo
+  se activa en una instalación real, y ahí busca versión nueva en GitHub
+  Releases, la descarga sola, y avisa con la notificación nativa de
+  Windows cuando ya está lista para instalarse (al cerrar la app).
+- **Scripts nuevos**: `npm run dist` (arma el instalador sin publicarlo,
+  queda en `dist/`) y `npm run release` (arma Y publica a GitHub Releases
+  de una — necesita el repo real y estar autenticado con GitHub, pendiente
+  de la próxima sesión). `npm run dist` ya se probó de verdad: generó
+  `dist\Simple Welcome Setup 5.6.0.exe` (108 MB) sin errores — confirma
+  que la configuración de electron-builder funciona antes de meter GitHub
+  en la ecuación. Ese .exe es un build de prueba de la versión 5.6, se
+  puede borrar (`dist/` está en `.gitignore` y no se sube a ningún lado).
+- **Sin firma de código** — el instalador no está firmado (comprar un
+  certificado de firma de código es una decisión aparte, con costo, no
+  se tomó aquí). Windows SmartScreen va a mostrar la advertencia
+  "Windows protegió su PC" la primera vez que alguien lo instale — normal
+  para apps personales/indie sin certificado, no es un error de la
+  configuración.
+
+**Pendiente inmediato (la sesión que sigue, a propósito):** crear el
+repositorio en GitHub (decidir público/privado — si es privado,
+`electron-updater` necesita un token para las descargas), reemplazar
+`TU-USUARIO-DE-GITHUB`/`TU-REPO` en `package.json` con los datos reales,
+`git init` en este proyecto (todavía no es un repo git), y correr
+`npm run release` para el primer release de verdad.
+
+No hay pendientes anotados sin ejecutar en este momento — cualquier lista de
+"pendientes" que Abel mencione es nueva a partir de aquí.
+
+Pendiente conocido para el futuro (mencionado pero no diseñado a fondo
+todavía): que la app se abra sola al iniciar Windows (el empaquetado en sí
+ya está resuelto, ver la sesión de arriba — esto es aparte, un acceso
+directo en la carpeta de inicio o una entrada de registro); interacción
+con Chía vía una IA local; versión para tablet Android (arquitectura sin
+definir); login + sync de configuración/leídos contra un servidor propio;
+integración con calendario de Outlook.

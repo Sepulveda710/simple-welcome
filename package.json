@@ -1,0 +1,49 @@
+{
+  "name": "simple-welcome",
+  "version": "5.7.0",
+  "description": "Simple Welcome — app de bienvenida al iniciar Windows: saludo, hora y noticias con modo lectura",
+  "author": "Abel",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder",
+    "release": "electron-builder --publish always"
+  },
+  "dependencies": {
+    "@mozilla/readability": "^0.6.0",
+    "dompurify": "^3.4.15",
+    "electron-updater": "^6.8.9",
+    "jsdom": "^24.0.0",
+    "rss-parser": "^3.13.0"
+  },
+  "devDependencies": {
+    "electron": ">=38.0.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.abel.simplewelcome",
+    "productName": "Simple Welcome",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!dist/**",
+      "!config/**"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icono.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "Sepulveda710",
+      "repo": "simple-welcome"
+    }
+  }
+}

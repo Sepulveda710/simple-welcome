@@ -1,0 +1,1640 @@
+/* Fluent Design (beta): Mica nativo detrás (ver main.js) + paneles tipo
+   Acrylic (translúcidos) encima. El body debe quedar transparente para
+   que el Mica del sistema se vea a través de él. */
+
+* { box-sizing: border-box; }
+
+:root {
+  /* Punto desde donde crece el círculo al cambiar de tema (ver
+     aplicarTemaConTransicion en renderer.js) — por defecto la esquina
+     donde vive el botón de tema cálido, hasta que un clic real lo mueva. */
+  --origen-tema-x: 100%;
+  --origen-tema-y: 0px;
+  --accent: #0067c0;
+  --accent-texto: #0c447c;
+  --accent-fondo: rgba(0, 103, 192, 0.1);
+  --superficie: rgba(255, 255, 255, 0.72);
+  --superficie-fuerte: rgba(255, 255, 255, 0.88);
+  --borde: rgba(0, 0, 0, 0.07);
+  --texto: #1a1a1a;
+  --texto-secundario: #5c5c5c;
+  --texto-terciario: #8a8a8a;
+  --texto-solido: #404040; /* gris sólido: para texto secundario en barra lateral y botones, más legible sobre el fondo translúcido que --texto-terciario */
+  --radio: 8px;
+  --radio-grande: 12px;
+}
+
+/* Tema oscuro: mismas variables, valores distintos — el resto del CSS no
+   se toca, porque todo ya está construido sobre estas variables. Se activa
+   con el atributo data-tema="oscuro" en <html> (ver renderer.js). El Mica
+   nativo se sincroniza aparte, desde main.js (nativeTheme). */
+:root[data-tema="oscuro"] {
+  --accent: #4cc2ff;
+  --accent-texto: #8ecfff;
+  --accent-fondo: rgba(76, 194, 255, 0.15);
+  --superficie: rgba(32, 32, 32, 0.75);
+  --superficie-fuerte: rgba(46, 46, 46, 0.9);
+  --borde: rgba(255, 255, 255, 0.1);
+  --texto: #f3f3f3;
+  --texto-secundario: #c8c8c8;
+  --texto-terciario: #9a9a9a;
+  --texto-solido: #dcdcdc;
+}
+
+/* Modo cálido de lectura: INDEPENDIENTE del tema claro/oscuro (a propósito
+   — antes compartían la misma variable "tema" y activar uno pisaba al
+   otro: si estabas en oscuro y prendías el modo cálido, toda la app volvía
+   a claro de golpe). Por eso esto usa una clase en #modo-lectura, no un
+   valor de data-tema — así conviven los dos: puedes leer en cálido con el
+   resto de la app en oscuro, o en claro, sin que se estorben.
+   Colores pensados para reducir fatiga visual (poca luz azul, bajo
+   contraste/brillo): un tono papel envejecido en vez de un blanco/crema
+   brillante, y un café cálido en vez de negro puro para el texto. */
+#modo-lectura.calido #panel-articulo,
+#modo-lectura.calido .encabezado-articulo,
+#modo-lectura.calido .contenido-articulo {
+  background: #ede0c8;
+  color: #4a3728;
+}
+#modo-lectura.calido .contenido-articulo a { color: #96632f; }
+#modo-lectura.calido #lectura-titulo,
+#modo-lectura.calido .nombre-fuente { color: #4a3728; }
+
+body {
+  margin: 0;
+  padding: 20px;
+  font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  background: transparent; /* deja ver el Mica nativo de la ventana (ver main.js) */
+  color: var(--texto);
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+/* Barra de scroll fina, estilo Windows 11 */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.3); background-clip: padding-box; }
+
+.contenedor {
+  width: 100%;
+  max-width: 960px; /* suficiente para calendario + noticias lado a lado */
+}
+
+/* En modo lectura ya no hace falta un ancho especial: es el mismo. */
+.contenedor.modo-ancho {
+  max-width: 960px;
+}
+
+.fila-principal {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+/* Ventana angosta (cerca del mínimo): ya no hay espacio cómodo para las
+   dos columnas, así que el calendario y Chía se esconden y las noticias
+   usan todo el ancho — se prioriza lo más importante. */
+@media (max-width: 820px) {
+  .columna-izquierda {
+    display: none;
+  }
+  .fila-principal {
+    gap: 0;
+  }
+}
+
+.tarjeta {
+  background: var(--superficie);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-radius: var(--radio-grande);
+  border: 1px solid var(--borde);
+  padding: 22px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.fecha { font-size: 13px; color: var(--texto-secundario); margin: 0 0 4px; text-transform: capitalize; }
+.hora { font-size: 15px; color: var(--texto-secundario); margin: 8px 0 0; }
+h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.2px; }
+
+.encabezado-inicio {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.acciones-encabezado {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.boton-icono-encabezado {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--borde);
+  background: rgba(0, 0, 0, 0.03);
+  color: var(--texto-solido);
+  font-size: 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s ease;
+}
+.boton-icono-encabezado:hover { background: rgba(0, 0, 0, 0.07); }
+
+.avatar-usuario {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.widget-clima {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  color: var(--texto-solido);
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid var(--borde);
+  border-radius: 100px;
+  padding: 6px 12px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+#icono-clima { font-size: 14px; }
+
+.subtitulo { font-size: 13px; color: var(--texto-secundario); margin: 0 0 8px; font-weight: 600; }
+
+.cabecera-noticias {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 18px;
+  border-bottom: 1px solid var(--borde);
+}
+
+.pestanas-categoria {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex: 1;
+  min-width: 0;
+  padding-left: 16px; /* alinea con el texto dentro de las tarjetas, que tienen ese mismo padding */
+  overflow-x: auto;
+}
+
+.chip-fuente-activa {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--texto-secundario);
+  padding: 8px 2px 10px;
+}
+.chip-fuente-activa strong { color: var(--texto); }
+
+.boton-quitar-chip {
+  background: var(--accent-fondo);
+  color: var(--accent-texto);
+  border: none;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.pestana {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-size: 14px;
+  color: var(--texto-secundario);
+  padding: 8px 2px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.12s ease, border-color 0.12s ease;
+}
+.pestana:hover { color: var(--texto); }
+.pestana.activa {
+  color: var(--accent-texto);
+  font-weight: 600;
+  border-bottom-color: var(--accent);
+}
+
+.seccion-categoria { margin-bottom: 26px; }
+.seccion-categoria .lista-noticias { margin: 0; }
+
+.cabecera-seccion {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 0 16px; /* mismo eje que el texto de las tarjetas y las pestañas */
+}
+.cabecera-seccion h2 { font-size: 16px; font-weight: 600; margin: 0; }
+
+.enlace-ver-todo {
+  background: none;
+  border: none;
+  color: var(--accent-texto);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+.enlace-ver-todo:hover { text-decoration: underline; }
+
+.lista-noticias { display: flex; flex-direction: column; gap: 8px; }
+
+.noticia {
+  background: var(--superficie);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-grande);
+  padding: 14px 16px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.noticia:hover {
+  background: var(--superficie-fuerte);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+/* No leída: un punto azul llama la atención, como en Gmail */
+.noticia.no-leida h3::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-right: 7px;
+  vertical-align: middle;
+}
+
+/* Leída: se atenúa para que salte a la vista lo que falta por leer */
+.noticia.leida {
+  opacity: 0.55;
+}
+.noticia.leida h3 { font-weight: 400; }
+
+.noticia .miniatura {
+  width: 64px;
+  height: 64px;
+  min-width: 64px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: rgba(0, 0, 0, 0.05); /* se ve mientras carga o si la imagen falla */
+}
+
+.info-noticia { flex: 1; min-width: 0; }
+
+.noticia .categoria {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--accent-fondo);
+  color: var(--accent-texto);
+  padding: 2px 9px;
+  border-radius: 100px; /* pill, como los badges de Windows 11 */
+  margin-bottom: 6px;
+}
+
+.noticia h3 { font-size: 15px; margin: 0 0 4px; font-weight: 600; }
+.noticia .meta { font-size: 12px; color: var(--texto-terciario); margin: 0; }
+
+.acciones-noticia { display: flex; flex-direction: column; gap: 4px; align-items: center; }
+
+.boton-marcar {
+  background: none;
+  border: 1px solid var(--borde);
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  font-size: 13px;
+  color: var(--texto-terciario);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.boton-marcar:hover { background: rgba(0, 0, 0, 0.05); }
+
+.noticia.leida .boton-marcar {
+  color: var(--accent-texto);
+  border-color: var(--accent);
+  background: var(--accent-fondo);
+}
+
+.boton-guardar-noticia {
+  background: none;
+  border: 1px solid var(--borde);
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  font-size: 12px;
+  color: var(--texto-terciario);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.boton-guardar-noticia:hover { background: rgba(0, 0, 0, 0.05); }
+.boton-guardar-noticia.guardado {
+  color: #a8730c;
+  border-color: #a8730c;
+  background: rgba(168, 115, 12, 0.1);
+}
+
+.estado { color: var(--texto-secundario); font-size: 14px; }
+
+/* Skeleton loader: tarjetas "fantasma" mientras llegan las noticias de verdad,
+   en vez del típico texto de "Cargando..." */
+@keyframes brillo-skeleton {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.tarjeta-skeleton {
+  height: 92px;
+  border-radius: var(--radio-grande);
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.04) 25%,
+    rgba(0, 0, 0, 0.08) 37%,
+    rgba(0, 0, 0, 0.04) 63%
+  );
+  background-size: 400px 100%;
+  animation: brillo-skeleton 1.4s linear infinite;
+}
+
+/* Animación de entrada: aparecen con un ligero deslizamiento hacia arriba,
+   en cascada (el retraso de cada tarjeta lo calcula renderer.js). */
+@keyframes entrada-fluent {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.noticia {
+  animation: entrada-fluent 0.4s cubic-bezier(0.2, 0, 0, 1) backwards;
+}
+
+.zona-cargar-mas { display: flex; justify-content: center; margin-top: 12px; }
+
+.boton-cargar-mas {
+  background: var(--superficie);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--borde);
+  border-radius: 100px;
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-texto);
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.boton-cargar-mas:hover { background: var(--superficie-fuerte); }
+
+.oculto { display: none; }
+
+.modo-lectura {
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+  height: calc(100vh - 40px); /* resta el padding de arriba y abajo del body */
+}
+
+#modo-lectura.oculto {
+  display: none;
+}
+
+.barra-lateral {
+  width: 260px;
+  flex-shrink: 0;
+  background: var(--superficie);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-grande);
+  padding: 12px;
+  height: 100%;
+  overflow-y: auto;
+  transition: width 0.15s ease;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+}
+
+.barra-lateral.colapsada {
+  width: 48px;
+  padding: 12px 8px;
+  overflow: hidden;
+}
+
+.barra-lateral.colapsada .texto-colapsable {
+  display: none;
+}
+
+.cabecera-barra {
+  position: sticky;
+  top: -12px; /* compensa el padding del contenedor para llegar hasta el borde real */
+  margin: -12px -12px 12px;
+  padding: 12px 12px 10px;
+  background: var(--superficie);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-radius: var(--radio-grande) var(--radio-grande) 0 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#cerrar-lectura {
+  background: none;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-texto);
+  cursor: pointer;
+  padding: 0;
+  white-space: nowrap;
+}
+
+#alternar-barra {
+  background: none;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  width: 24px;
+  height: 24px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--texto-secundario);
+  flex-shrink: 0;
+  transition: background 0.12s ease;
+}
+#alternar-barra:hover { background: rgba(0, 0, 0, 0.06); }
+
+.resumen-barra-lateral {
+  font-size: 11px;
+  color: var(--texto-secundario);
+  padding: 0 2px 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.separador-fecha-lateral {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--texto-secundario);
+  padding: 10px 2px 2px;
+}
+.separador-fecha-lateral:first-child { padding-top: 0; }
+
+.lista-lateral { display: flex; flex-direction: column; gap: 4px; }
+
+.item-lateral {
+  padding: 8px 10px 8px 9px; /* 9px izq. porque los 3px del borde ya suman al total */
+  border-radius: 6px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.miniatura-lateral {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.contenido-item-lateral { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+
+.meta-lateral { display: flex; align-items: center; gap: 6px; }
+
+.favicon-lateral { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+
+.fuente-lateral {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--texto-secundario);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.titulo-lateral {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--texto-solido);
+  /* Trunca a 3 líneas con "..." — mejor que una sola línea para títulos
+     de noticias, que suelen ser largos. */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.item-lateral:hover { background: rgba(0, 0, 0, 0.05); }
+
+/* El color viene inyectado por renderer.js según la fuente de esa noticia
+   (config/fuentes.json). Si no hay color definido, cae al azul de acento. */
+.item-lateral.activo {
+  background: var(--superficie-fuerte);
+  border-left-color: var(--source-color, var(--accent));
+  font-weight: 600;
+}
+
+.item-lateral.leida { opacity: 0.5; }
+
+.panel-articulo {
+  flex: 1;
+  min-width: 0; /* evita que el texto largo empuje el layout */
+  background: var(--superficie);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-grande);
+  height: 100%;
+  overflow: hidden; /* el que scrollea ahora es .area-scroll, no este contenedor */
+  position: relative;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+}
+
+/* Este es el único elemento que realmente hace scroll. El encabezado
+   flota fuera de él (es hermano, no hijo), así que ocultarlo/mostrarlo
+   nunca cambia el alto scrolleable ni traba el arrastre del mouse. */
+.area-scroll {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+}
+
+.marca-fuente {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 4px;
+}
+
+/* Favicon real del sitio (vía servicio de favicons), 16x16. Si falla la
+   carga, onerror en el HTML lo oculta — sin caja rota ni ícono roto. */
+.favicon-fuente {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.nombre-fuente {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--texto-solido);
+}
+#lectura-titulo { font-size: 21px; font-weight: 600; margin: 0; letter-spacing: -0.1px; }
+
+/* Flota encima del contenido en vez de empujarlo — así ocultarla/mostrarla
+   nunca cambia el alto total scrolleable, y el arrastre del mouse en la
+   barra de desplazamiento no se traba recalculando tamaños. */
+.encabezado-articulo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  background: var(--superficie-fuerte);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  padding: 20px 20px 12px;
+  transition: transform 0.2s ease;
+  border-bottom: 1px solid var(--borde);
+  border-radius: var(--radio-grande) var(--radio-grande) 0 0;
+}
+
+/* Al hacer scroll hacia abajo se desliza fuera de la vista;
+   al hacer scroll hacia arriba, renderer.js le quita esta clase. */
+.encabezado-articulo.oculto-scroll {
+  transform: translateY(-100%);
+}
+
+.cabecera-articulo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.navegacion-articulo { display: flex; gap: 6px; }
+
+.boton-nav {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  font-size: 13px;
+  padding: 4px 10px;
+  cursor: pointer;
+  color: var(--texto-solido);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.12s ease;
+}
+
+/* Íconos de Segoe Fluent (nativos de Windows 11). Si el sistema no los
+   tiene disponibles (fuera de Windows 11), el navegador simplemente no
+   muestra el glifo — por eso el texto de Anterior/Siguiente se mantiene
+   siempre como respaldo visible. */
+.icono-fluent {
+  font-family: "Segoe Fluent Icons", "Segoe MDL2 Assets", sans-serif;
+  font-style: normal;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.boton-nav:hover { background: rgba(0, 0, 0, 0.06); }
+
+.boton-nav:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.boton-nav:disabled:hover { background: none; }
+
+/* Estado "activo" para botones que alternan (guardar, modo cálido) */
+.boton-nav.guardado {
+  color: #a8730c;
+  border-color: #a8730c;
+  background: rgba(168, 115, 12, 0.1);
+}
+
+.contenido-articulo {
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--texto);
+  padding: 0 20px 20px; /* el padding-top lo agrega renderer.js según el alto real del encabezado */
+}
+.contenido-articulo img { max-width: 100%; height: auto; display: block; margin: 12px 0; border-radius: var(--radio); }
+.contenido-articulo a { color: var(--accent-texto); }
+
+/* Portada del artículo: la miniatura del feed, siempre presente (no
+   depende de si Readability la conservó dentro del texto — ver
+   insertarPortadaArticulo en renderer.js). Más grande y con más aire que
+   una imagen normal del cuerpo del texto. */
+.contenido-articulo img.portada-articulo {
+  width: 100%;
+  aspect-ratio: 16 / 8;
+  object-fit: cover;
+  margin: 0 0 20px;
+}
+
+/* Tinte adaptativo: color dominante extraído de la portada (ver
+   src/color-articulo.js + aplicarTinteArticulo en renderer.js), aplicado
+   a TODA la ventana — incluido el margen fuera de la columna de 960px en
+   ventanas anchas (por eso la regla de "body" aquí abajo), no solo el
+   modo lectura. Solo en tema claro — en oscuro el contraste del resto de
+   la app se rompería, así que el selector entero queda condicionado a
+   data-tema="claro" en vez de confiar en que el JS nunca lo active ahí
+   (si cambias de tema a media lectura, esto se apaga solo). La variable
+   y la clase ".con-tinte" viven en <html> (no en #modo-lectura) para que
+   tanto "body" como el contenido de lectura puedan heredar
+   --tinte-color — un ancestro no puede leer una variable puesta en su
+   descendiente. Se excluye el modo cálido de lectura a propósito en el
+   panel/encabezado: son dos tratamientos de fondo que no deben
+   mezclarse (ver la sección "Modo cálido de lectura" arriba). */
+html.con-tinte[data-tema="claro"] body {
+  background: color-mix(in srgb, var(--tinte-color) 10%, transparent);
+  transition: background 0.4s ease;
+}
+html.con-tinte[data-tema="claro"] #modo-lectura {
+  /* Sin esto, el espacio de 16px entre la barra lateral y el panel se
+     queda en el tinte más tenue del body en vez de acompañar el resto
+     — se nota como una rendija apagada entre dos cajas de color. */
+  background: color-mix(in srgb, var(--tinte-color) 14%, transparent);
+  border-radius: var(--radio-grande);
+  transition: background 0.4s ease;
+}
+html.con-tinte[data-tema="claro"] .barra-lateral,
+html.con-tinte[data-tema="claro"] .cabecera-barra {
+  background: color-mix(in srgb, var(--tinte-color) 16%, var(--superficie));
+  transition: background 0.4s ease;
+}
+html.con-tinte[data-tema="claro"] #modo-lectura:not(.calido) .panel-articulo {
+  background: radial-gradient(120% 90% at 25% 0%,
+    color-mix(in srgb, var(--tinte-color) 26%, var(--superficie)) 0%,
+    color-mix(in srgb, var(--tinte-color) 6%, var(--superficie)) 70%);
+  transition: background 0.4s ease;
+}
+html.con-tinte[data-tema="claro"] #modo-lectura:not(.calido) .encabezado-articulo {
+  /* --superficie-fuerte es casi opaca (90%) a propósito — para que el
+     encabezado se lea bien flotando sobre el texto al hacer scroll — así
+     que necesita un porcentaje bastante más alto que la barra lateral o
+     el panel (que mezclan sobre --superficie, más translúcida) para que
+     el tinte se note lo mismo a simple vista en vez de quedarse en un
+     blanco apenas cálido. */
+  background: color-mix(in srgb, var(--tinte-color) 34%, var(--superficie-fuerte));
+  transition: background 0.4s ease;
+}
+
+/* Panel de configuración: capa que cubre toda la ventana, con la
+   tarjeta centrada — igual que cualquier diálogo modal de Windows 11. */
+.capa-configuracion {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+.capa-configuracion.oculto { display: none; }
+
+.contenido-configuracion {
+  width: 480px;
+  max-height: 84vh;
+  overflow-y: auto;
+  margin: 0; /* .tarjeta trae margin-bottom por defecto, aquí no hace falta */
+}
+
+/* Agrupa los campos por tema (Perfil, Interfaz, Chía, Fuentes) — antes
+   era una sola lista plana de campos sin separación visual. */
+.grupo-configuracion { margin-bottom: 18px; }
+
+.titulo-grupo-configuracion {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--texto-secundario);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 12px;
+}
+
+.icono-grupo-configuracion {
+  font-size: 14px;
+  line-height: 1;
+}
+.icono-grupo-configuracion.cara-chia {
+  font-family: "Cascadia Code", "Consolas", monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--accent);
+  text-transform: none;
+}
+
+.fila-configuracion {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.fila-configuracion .campo-configuracion { margin-bottom: 0; }
+
+.cabecera-configuracion {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.cabecera-configuracion h2 { font-size: 18px; font-weight: 600; margin: 0; }
+
+.campo-configuracion {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--texto-secundario);
+  margin-bottom: 14px;
+}
+
+.campo-configuracion input,
+.campo-configuracion select {
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--texto);
+  padding: 8px 10px;
+  border-radius: var(--radio);
+  border: 1px solid var(--borde);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.campo-configuracion.campo-casilla {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.campo-configuracion.campo-casilla input { padding: 0; flex-shrink: 0; width: 16px; height: 16px; }
+.campo-configuracion.campo-casilla small { color: var(--texto-terciario); }
+
+/* Mismo campo de checkbox, pero como interruptor Fluent en vez de una
+   casilla — usado en Configuración (modo cálido, saludo al inicio) y en
+   el toggle On/Off de cada fuente de noticias. */
+.campo-configuracion.campo-interruptor {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.campo-configuracion.campo-interruptor small { color: var(--texto-terciario); }
+
+.interruptor { position: relative; display: inline-block; width: 38px; height: 22px; flex-shrink: 0; }
+.interruptor input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 1;
+}
+.interruptor-riel {
+  position: absolute;
+  inset: 0;
+  background: var(--borde);
+  border-radius: 999px;
+  transition: background 0.15s ease;
+}
+.interruptor-riel::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s ease;
+}
+.interruptor input:checked + .interruptor-riel { background: var(--accent); }
+.interruptor input:checked + .interruptor-riel::before { transform: translateX(16px); }
+.interruptor input:focus-visible + .interruptor-riel { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Catálogo completo de EXPRESIONES_CHIA como chips seleccionables — la
+   elegida se vuelve la cara "de reposo" (mostrarExpresionChia la usa en
+   vez de 'relajado' fijo; los estados contextuales como "triste" al
+   perder internet la siguen pisando temporalmente, sin cambios ahí). */
+.selector-caras-chia {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.opcion-cara-chia {
+  font-family: "Cascadia Code", "Consolas", monospace;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  padding: 6px 9px;
+  border-radius: var(--radio);
+  border: 1px solid var(--borde);
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--texto-secundario);
+  cursor: pointer;
+  transition: border-color 0.12s ease, color 0.12s ease, background 0.12s ease;
+}
+.opcion-cara-chia:hover { border-color: var(--accent); color: var(--texto); }
+.opcion-cara-chia.seleccionada {
+  border-color: var(--accent);
+  background: var(--accent-fondo);
+  color: var(--accent-texto);
+}
+
+.acciones-configuracion {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+.acciones-configuracion #guardar-configuracion { flex: 1; }
+.acciones-configuracion button { flex: 1; }
+
+.contenido-configuracion hr {
+  border: none;
+  border-top: 1px solid var(--borde);
+  margin: 16px 0;
+}
+
+.boton-ancho { width: 100%; justify-content: center; }
+
+.acerca-de { font-size: 13px; color: var(--texto-secundario); }
+.acerca-de-titulo { font-weight: 600; color: var(--texto); margin: 0 0 2px; }
+.acerca-de-version { margin: 0; }
+
+.seccion-fuentes h3 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 10px;
+  color: var(--texto-secundario);
+}
+/* Dos columnas con tarjetas, mismo lenguaje visual que .tarjeta-fuente-filtro
+   ("Ver por fuente" en la pantalla principal) — franja de color arriba,
+   favicon real, para que Configuración y esa vista se sientan
+   consistentes en vez de dos estilos distintos para lo mismo. */
+.lista-fuentes {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.item-fuente {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  padding: 10px;
+  background: var(--superficie-fuerte);
+  border: 1px solid var(--borde);
+  border-top: 3px solid var(--source-color, var(--accent));
+  border-radius: var(--radio);
+  transition: opacity 0.12s ease;
+}
+.item-fuente.inactiva { opacity: 0.55; }
+
+.fila-superior-fuente { display: flex; align-items: center; gap: 8px; padding-right: 18px; }
+.favicon-item-fuente { width: 18px; height: 18px; border-radius: 4px; flex-shrink: 0; }
+.nombre-item-fuente {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  color: var(--texto);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fila-inferior-fuente { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.categoria-item-fuente { font-size: 11px; color: var(--texto-terciario); }
+
+.boton-eliminar-fuente {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  color: var(--texto-terciario);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px;
+}
+.boton-eliminar-fuente:hover { color: #c62828; }
+
+@media (max-width: 520px) {
+  .lista-fuentes { grid-template-columns: 1fr; }
+}
+
+.contenido-guardados { width: 380px; max-height: 70vh; overflow-y: auto; margin: 0; }
+
+/* --- Ver por fuente --- */
+
+.grid-fuentes {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.tarjeta-fuente-filtro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 12px;
+  background: var(--superficie-fuerte);
+  border: 1px solid var(--borde);
+  border-top: 3px solid var(--source-color, var(--accent));
+  border-radius: var(--radio);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.tarjeta-fuente-filtro:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.favicon-tarjeta-fuente { width: 20px; height: 20px; border-radius: 4px; }
+.nombre-tarjeta-fuente { font-size: 13px; font-weight: 600; color: var(--texto); }
+.cantidad-tarjeta-fuente { font-size: 11px; color: var(--texto-terciario); }
+
+.lista-guardados { display: flex; flex-direction: column; gap: 8px; }
+
+.item-guardado {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: var(--radio);
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.item-guardado:hover { background: rgba(0, 0, 0, 0.05); }
+
+.miniatura-guardado {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.info-guardado { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.titulo-guardado {
+  font-size: 13px;
+  font-weight: 600;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.fuente-guardado { font-size: 11px; color: var(--texto-terciario); }
+
+.boton-eliminar-guardado {
+  background: none;
+  border: none;
+  color: var(--texto-terciario);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+.boton-eliminar-guardado:hover { color: #c62828; }
+
+.lista-atajos {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--texto);
+}
+kbd {
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--borde);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+#form-fuente input[type="color"] {
+  padding: 2px;
+  height: 34px;
+  cursor: pointer;
+}
+
+/* --- Calendario --- */
+
+.columna-izquierda {
+  width: 270px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+#tarjeta-calendario {
+  padding: 16px;
+}
+
+.columna-noticias {
+  flex: 1;
+  min-width: 0;
+}
+
+/* --- Chía --- */
+
+.tarjeta-chia {
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+}
+
+.cara-chia {
+  margin: 0;
+  font-family: "Cascadia Code", "Consolas", monospace;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  line-height: 1.3;
+  color: var(--accent);
+  /* "Respiración" sutil — hasta que haya algo real que la anime (ver
+     mostrarExpresionChia en renderer.js), esto evita que se sienta
+     completamente estática. */
+  animation: respirar-chia 3.2s ease-in-out infinite;
+}
+
+@keyframes respirar-chia {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.nombre-chia {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--texto-secundario);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cabecera-calendario {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.cabecera-calendario h2 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0;
+  text-transform: capitalize;
+}
+
+.grupo-derecha-calendario { display: flex; align-items: center; gap: 4px; }
+
+.grid-dias-semana {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-size: 10px;
+  color: var(--texto-terciario);
+  margin-bottom: 4px;
+}
+
+.grid-calendario {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.dia-calendario {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--texto);
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.dia-calendario:hover { background: rgba(0, 0, 0, 0.05); }
+
+.dia-calendario.otro-mes { color: var(--texto-terciario); opacity: 0.45; }
+
+.dia-calendario.hoy { background: var(--accent); color: #ffffff; font-weight: 700; }
+
+.dia-calendario.seleccionado:not(.hoy) {
+  background: var(--accent-fondo);
+  color: var(--accent-texto);
+  font-weight: 600;
+}
+
+.puntos-recordatorio { display: flex; gap: 2px; }
+.punto-recordatorio { width: 4px; height: 4px; border-radius: 50%; }
+
+.seccion-recordatorios {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--borde);
+}
+.seccion-recordatorios h3 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 10px;
+  color: var(--texto-secundario);
+  text-transform: capitalize;
+}
+
+.lista-recordatorios {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.item-recordatorio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.barra-color-recordatorio { width: 4px; height: 16px; border-radius: 2px; flex-shrink: 0; }
+.hora-recordatorio { font-size: 11px; color: var(--texto-terciario); flex-shrink: 0; }
+.texto-recordatorio { flex: 1; }
+
+.boton-eliminar-recordatorio {
+  background: none;
+  border: none;
+  color: var(--texto-terciario);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0 4px;
+}
+.boton-eliminar-recordatorio:hover { color: #c62828; }
+
+.form-recordatorio {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.form-recordatorio input {
+  font-family: inherit;
+  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: var(--radio);
+  border: 1px solid var(--borde);
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--texto);
+}
+
+/* El navegador no deja quitarle todos los detalles nativos a un campo de
+   hora, pero sí la mayoría: fondo, borde, color e ícono. */
+.form-recordatorio input[type="time"] {
+  color-scheme: light;
+  width: fit-content;
+}
+.form-recordatorio input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: opacity(0.6);
+  cursor: pointer;
+}
+
+.colores-recordatorio { display: flex; gap: 6px; }
+.swatch-color {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  padding: 0;
+}
+.swatch-color.activo { border-color: var(--texto); }
+
+.cita-del-dia {
+  font-size: 11px;
+  font-style: italic;
+  color: var(--texto-terciario);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* --- Calendario expandido (modal) --- */
+
+.modal-calendario-grande {
+  width: 80vw;
+  max-width: 900px;
+  height: 80vh;
+  max-height: 700px;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.contenido-modal-calendario {
+  display: flex;
+  gap: 20px;
+  flex: 1;
+  min-height: 0; /* para que los hijos con scroll interno funcionen dentro de un flex */
+  margin-top: 8px;
+}
+
+.columna-calendario-grande {
+  flex: 1.3;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.grid-calendario-grande { flex: 1; gap: 6px; }
+
+.dia-calendario-grande {
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 6px;
+  gap: 4px;
+  font-size: 13px;
+  min-width: 0; /* sin esto, el texto largo agranda la celda entera en vez de truncarse */
+  aspect-ratio: auto; /* el chico sí es cuadrado; el grande necesita alto libre para las píldoras */
+}
+.dia-calendario-grande .numero-dia { align-self: flex-start; }
+
+.pildoras-recordatorio {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  min-width: 0;
+}
+.pildora-recordatorio {
+  font-size: 9px;
+  color: #ffffff;
+  padding: 1px 5px;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.columna-detalle-dia {
+  width: 280px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--borde);
+  padding-left: 20px;
+  overflow-y: auto;
+  position: relative;
+}
+.columna-detalle-dia h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 10px;
+  padding-right: 24px; /* espacio para no chocar con el botón de cerrar */
+  text-transform: capitalize;
+}
+
+.boton-cerrar-modal {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 4px 8px;
+}
+
+/* Animación de aparición/desaparición de los modales (Configuración y
+   Calendario expandido) — mismo patrón de fundido + escala que pidió
+   Gemini, con la curva de Windows 11 que ya usamos en el resto de la app. */
+@keyframes entrada-modal {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes salida-modal {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.95); }
+}
+.entrada-modal { animation: entrada-modal 0.2s cubic-bezier(0.1, 0.9, 0.2, 1) both; }
+.salida-modal { animation: salida-modal 0.15s cubic-bezier(0.1, 0.9, 0.2, 1) both; }
+
+/* Formulario de "nuevo recordatorio" (más corto) y de "nueva fuente" (4
+   campos + botón, más alto) comparten esta clase — el límite tiene que
+   alcanzar para el más alto de los dos, si no el botón de abajo se corta. */
+.formulario-colapsable {
+  overflow: hidden;
+  max-height: 480px;
+  transition: max-height 0.2s cubic-bezier(0.1, 0.9, 0.2, 1), opacity 0.2s ease, margin-top 0.2s ease;
+  margin-top: 10px;
+}
+.formulario-colapsable.colapsado {
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+}
+
+.boton-mas-recordatorio {
+  background: none;
+  border: 1px dashed var(--borde);
+  border-radius: var(--radio);
+  color: var(--accent-texto);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 12px;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: background 0.12s ease;
+}
+.boton-mas-recordatorio:hover { background: rgba(0, 0, 0, 0.04); }
+
+/* Animaciones del contenido del artículo. El encabezado NUNCA se anima —
+   solo esto, para que la ventana se sienta estable. */
+
+@keyframes entrada-articulo {
+  from { opacity: 0; transform: translateY(14px) scale(0.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.contenido-articulo.entrada-articulo {
+  animation: entrada-articulo 0.24s cubic-bezier(0.1, 0.9, 0.2, 1) both;
+}
+
+@keyframes desliza-derecha {
+  from { opacity: 0; transform: translateX(25px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes desliza-izquierda {
+  from { opacity: 0; transform: translateX(-25px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.contenido-articulo.desliza-siguiente {
+  animation: desliza-derecha 0.2s cubic-bezier(0.1, 0.9, 0.2, 1) both;
+}
+.contenido-articulo.desliza-anterior {
+  animation: desliza-izquierda 0.2s cubic-bezier(0.1, 0.9, 0.2, 1) both;
+}
+
+/* Transición al entrar/salir del modo lectura (no confundir con las de
+   arriba, que son para cambiar de artículo YA estando adentro). Misma
+   curva y familia de duraciones que el resto de la app, para que se
+   sienta consistente. */
+
+@keyframes fluent-fade-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes fluent-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fluent-entra-derecha {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes fluent-sale-derecha {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(24px); }
+}
+
+.transicion-salida { animation: fluent-fade-out 0.15s cubic-bezier(0.1, 0.9, 0.2, 1) both; }
+
+/* Aviso de conexión (ver actualizarEstadoConexion en renderer.js) — mismas
+   curvas de entrada/salida que el resto de la app. */
+.banner-conexion {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  margin-bottom: 14px;
+  border-radius: var(--radio);
+  font-size: 13px;
+  font-weight: 600;
+  animation: fluent-fade-in 0.2s cubic-bezier(0.1, 0.9, 0.2, 1) both;
+}
+.banner-conexion.oculto { display: none; }
+.banner-conexion.saliendo { animation: fluent-fade-out 0.2s cubic-bezier(0.1, 0.9, 0.2, 1) both; }
+
+.banner-conexion.sin-conexion {
+  background: rgba(198, 40, 40, 0.12);
+  color: #c62828;
+  border: 1px solid rgba(198, 40, 40, 0.25);
+}
+
+.banner-conexion.reconectado {
+  background: rgba(46, 125, 50, 0.12);
+  color: #2e7d32;
+  border: 1px solid rgba(46, 125, 50, 0.25);
+}
+
+/* Transición circular al cambiar de tema — calcada de la que usa
+   softzone.es, con la View Transitions API nativa del navegador (Chromium
+   ≥111; Electron va muy por delante de eso, así que siempre está
+   disponible). Si algún día no lo estuviera, aplicarTemaConTransicion en
+   renderer.js simplemente cambia el tema sin animación — nunca se rompe. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-new(root) {
+  animation: circulo-tema 0.45s ease-out forwards;
+}
+
+@keyframes circulo-tema {
+  from { clip-path: circle(0px at var(--origen-tema-x) var(--origen-tema-y)); }
+  to { clip-path: circle(150% at var(--origen-tema-x) var(--origen-tema-y)); }
+}
+
+/* Píldora de acción rápida: aparece al seleccionar texto en modo lectura
+   (ver renderer.js). Usa position: fixed porque el scroll real ocurre
+   dentro de #area-scroll, no en la página — así las coordenadas de
+   getBoundingClientRect() ya sirven directo, sin sumar/restar scroll. */
+.pildora-seleccion {
+  position: fixed;
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  background: var(--superficie-fuerte);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  z-index: 20;
+  opacity: 0;
+  transform: translateY(4px);
+  pointer-events: none;
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+
+.pildora-seleccion.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Modo cálido tiene su propia paleta sepia (no usa --superficie/--texto
+   globales, ver reglas de arriba) — la píldora necesita su propio
+   contraste ahí en vez de heredar las variables normales. */
+:root[data-tema="calido"] .pildora-seleccion {
+  background: rgba(244, 236, 216, 0.92);
+  border-color: rgba(91, 70, 54, 0.15);
+}
+
+.boton-pildora {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  font-size: 15px;
+  cursor: pointer;
+  color: var(--texto-solido);
+  transition: background 0.12s ease;
+}
+
+.boton-pildora:hover { background: var(--accent-fondo); }
+.boton-pildora .icono-fluent { font-size: 15px; }
+
+/* Botón para cerrar el panel de búsqueda con IA (WebContentsView aparte,
+   ver src/panel-ia.js — 420px de ancho, ver ANCHO_PANEL). Se posiciona
+   pegado al borde izquierdo del panel, del lado de nuestra propia interfaz,
+   porque el panel en sí no puede tener HTML nuestro encima. */
+.boton-cerrar-panel-ia {
+  position: fixed;
+  top: 16px;
+  right: 436px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--borde);
+  border-radius: 50%;
+  background: var(--superficie-fuerte);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  color: var(--texto-solido);
+  cursor: pointer;
+  z-index: 30;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.boton-cerrar-panel-ia.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.transicion-entrada { animation: fluent-fade-in 0.2s cubic-bezier(0.1, 0.9, 0.2, 1) both; }
+
+#modo-lectura.transicion-entrada-lectura { animation: fluent-entra-derecha 0.22s cubic-bezier(0.1, 0.9, 0.2, 1) both; }
+#modo-lectura.transicion-salida-lectura { animation: fluent-sale-derecha 0.18s cubic-bezier(0.1, 0.9, 0.2, 1) both; }
