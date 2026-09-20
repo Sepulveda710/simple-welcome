@@ -593,7 +593,8 @@ fuentes con un café/comida en vez de dejar que las redes decidan qué lee;
 por eso abrir al encender la PC — Abel puede ajustar el texto). El mismo
 "por qué" está en el README. Probado en dev por código (guardar/leer el
 interruptor); **el registro real en Windows solo se puede comprobar con la
-versión instalada** — pendiente de verificar tras publicar 5.8 e instalar.
+versión instalada** — VERIFICADO por Abel el 2026-09-20: instaló la 5.8,
+reinició la PC y la app arrancó sola.
 Abel prefiere fuentes de tecnología y economía; no política ni deportes
 por defecto (clickbait) — ver el mensaje del README.
 
