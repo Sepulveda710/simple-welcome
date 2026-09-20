@@ -610,7 +610,10 @@ el 2026-09-20 (build 5.8): instalado ≈ 384 MB, de los cuales ~290 MB son
 el motor Electron/Chromium, 48 MB idiomas de Chromium (`locales`) y solo
 ~16 MB son el código y dependencias propias (`app.asar`). Instalador de
 108 MB (las actualizaciones bajan solo lo que cambió, por el blockmap).
-RAM no se midió en la PC de Abel (Electron suele estar en 150–300 MB).
+RAM medida por Abel en el Administrador de tareas (2026-09-20): 145 MB
+recién arrancada; 254 MB tras un rato de uso antes de reiniciar. Normal
+para Electron — vigilar que no siga creciendo con los días (si pasa de
+~500 MB y sube, buscar fuga: cachés, imágenes, listas en `renderer.js`).
 - **Paso barato y sin riesgo**: conservar solo español e inglés con
   `"electronLanguages": ["es", "en-US"]` en `build` de `package.json`
   (~45 MB menos, ≈340 MB instalado). Probar el build antes de publicar.
