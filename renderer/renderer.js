@@ -1580,7 +1580,7 @@ document.getElementById('guardar-nueva-fuente').addEventListener('click', guarda
 // navegador del usuario, donde él decide qué escribir y si lo manda.
 // URL_FORMULARIO_COMENTARIOS se llena cuando exista el formulario
 // (Google Forms o Tally); mientras esté vacía, el botón queda oculto.
-const URL_FORMULARIO_COMENTARIOS = '';
+const URL_FORMULARIO_COMENTARIOS = 'https://tally.so/r/A7k5Ye';
 const URL_GITHUB_ISSUES = 'https://github.com/Sepulveda710/simple-welcome/issues/new';
 
 // Prellena el cuerpo del issue con la versión — GitHub lo muestra completo

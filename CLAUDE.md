@@ -608,9 +608,10 @@ que Abel diga "ejecuta"** (regla "anota, no ejecutes" de arriba):
    - **Caja de comentarios: HECHA en la rama `comentarios`** (Configuración
      > Comentarios): botón "Reportar en GitHub" (abre `issues/new` con la
      versión prellenada, visible antes de enviar) y botón "Enviar un
-     comentario" que queda **oculto hasta llenar `URL_FORMULARIO_COMENTARIOS`**
-     en `renderer.js` con el enlace de un Google Form/Tally que Abel debe
-     crear él mismo (llegan a su correo). Nada se envía desde la app.
+     comentario" que abre el formulario de Tally de Abel
+     (`URL_FORMULARIO_COMENTARIOS` en `renderer.js` = https://tally.so/r/A7k5Ye;
+     si está vacía, el botón se oculta). Las respuestas le llegan a su
+     correo. Nada se envía desde la app.
 7. **Lector de voz — plan acordado**: empezar con las voces de Windows
    (`speechSynthesis`, gratis, sin dependencias) y después probar Piper
    (offline, más natural). Abel quiere algo sencillo que suene bien, no
