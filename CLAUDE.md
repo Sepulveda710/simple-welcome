@@ -603,6 +603,28 @@ hace otra cosa (comer, etc.). Punto de partida probable: la API de voz
 del sistema (`speechSynthesis` en el renderer usa voces de Windows,
 sin costo ni internet); ver antes qué voces en español hay instaladas.
 
+**Idea anotada (no ejecutar todavía): app más ligera / dejar Electron.**
+Abel quiere que sea un programa ligero que corra en cualquier PC. Medido
+el 2026-09-20 (build 5.8): instalado ≈ 384 MB, de los cuales ~290 MB son
+el motor Electron/Chromium, 48 MB idiomas de Chromium (`locales`) y solo
+~16 MB son el código y dependencias propias (`app.asar`). Instalador de
+108 MB (las actualizaciones bajan solo lo que cambió, por el blockmap).
+RAM no se midió en la PC de Abel (Electron suele estar en 150–300 MB).
+- **Paso barato y sin riesgo**: conservar solo español e inglés con
+  `"electronLanguages": ["es", "en-US"]` en `build` de `package.json`
+  (~45 MB menos, ≈340 MB instalado). Probar el build antes de publicar.
+- **Paso grande, a futuro**: dejar Electron por Tauri (Rust + WebView2,
+  ~10–20 MB) o .NET + WebView2. Reusa `renderer/` casi tal cual — el único
+  punto de contacto es `window.api` en `preload.js` — pero hay que
+  reescribir `src/` (RSS, Readability, DOMPurify, color dominante,
+  clima…) que hoy es Node, y rehacer instalador y actualizador. Hacerlo en
+  una **rama aparte**, con la versión Electron funcionando mientras tanto.
+  No compensa hasta que el tamaño/memoria sean un problema real; antes de
+  decidir, medir la RAM real y probar en una PC vieja/modesta.
+- Cuidar mientras tanto lo que hace pesada a una app: no dejar timers o
+  cachés que crezcan sin límite (ya se acotó la caché de artículos), y
+  cargar/pintar solo lo necesario.
+
 **Ideas para si Abel algún día comparte la app públicamente** (anotadas el
 2026-09-20, solo ideas — hoy la app es solo para uso personal de Abel, no
 hay que hacer nada de esto todavía, y "anota" significa no ejecutar):
