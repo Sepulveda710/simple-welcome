@@ -69,6 +69,38 @@ seguir la serie de Y (5.3). Regla real:
   de otra forma, o que chocan con decisiones ya tomadas (ver historial abajo).
   Avísale cuando eso pase, en vez de aplicar el código tal cual.
 
+### Reglas de flujo de trabajo con Git (acordadas el 2026-09-20)
+
+Abel le pidió a Gemini unas reglas de desarrollo y las revisamos juntos;
+esta es la versión adaptada a trabajar directo sobre sus archivos (no
+copiando código desde un chat). Aplican siempre:
+
+1. **Avance incremental**: tareas en pasos pequeños y probables; cada
+   pieza se prueba (por código, sin automatizar pantalla real) antes de
+   pasar a la siguiente.
+2. **Ediciones puntuales, no reescribir archivos enteros**, y después de
+   cada cambio dar a Abel un **resumen en palabras simples** de qué se
+   tocó y por qué — no se espera que lea código línea por línea. Puede
+   ver los cambios en verde/rojo en VS Code o GitHub si quiere.
+3. **Commit en cada punto que funcione** (local, con mensaje claro).
+   Subir a GitHub (`git push`) y publicar releases **solo con el OK de
+   Abel**. Antes de sugerir el siguiente paso, cerrar el anterior con
+   su commit.
+4. **Dependencias**: antes de instalar algo, verificar que existe, está
+   vigente y sin vulnerabilidades (`npm audit`), y explicar en una línea
+   por qué se recomienda.
+5. **Explicar la lógica**, corto y con el porqué (ya era su preferencia).
+6. **Pedir permiso antes de borrar o rehacer desde cero** una parte del
+   proyecto, explicando los riesgos. Solo se limpian sin preguntar
+   artefactos generados por mí en la misma sesión (ej. un release a medias).
+7. **Ramas para funciones nuevas** (`git switch -c nombre`): `main` se
+   mantiene estable. Cuando la función está probada, preguntar a Abel
+   "¿la pasamos a main?" y él solo responde sí/no — Abel no escribe
+   comandos de git, los corro yo. Fixes chicos pueden ir directo a `main`.
+8. **Probar antes de dar algo por bueno**, y decir claramente qué se
+   probó y qué no (ej. el inicio con Windows solo se comprueba con la
+   versión instalada).
+
 ## Prioridades del proyecto (en orden)
 
 1. **Funcionamiento primero, estética después.** Así se construyó desde el
