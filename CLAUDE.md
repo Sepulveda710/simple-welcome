@@ -602,7 +602,20 @@ que Abel diga "ejecuta"** (regla "anota, no ejecutes" de arriba):
    quiere que sea ligera pero lo dejó **para casi al final**.
 6. **Compartir la app con otras personas** (grupo de Facebook de
    vibe-coders): ver "Ideas para si Abel algún día comparte la app
-   públicamente" abajo; incluye idea de un botón de comentarios/feedback.
+   públicamente" abajo. Abel decidió (2026-09-20) por ahora compartir solo
+   una captura y un video corto para pedir consejos — no el instalador; la
+   licencia se decide con calma más adelante.
+   - **Caja de comentarios: HECHA en la rama `comentarios`** (Configuración
+     > Comentarios): botón "Reportar en GitHub" (abre `issues/new` con la
+     versión prellenada, visible antes de enviar) y botón "Enviar un
+     comentario" que queda **oculto hasta llenar `URL_FORMULARIO_COMENTARIOS`**
+     en `renderer.js` con el enlace de un Google Form/Tally que Abel debe
+     crear él mismo (llegan a su correo). Nada se envía desde la app.
+7. **Lector de voz — plan acordado**: empezar con las voces de Windows
+   (`speechSynthesis`, gratis, sin dependencias) y después probar Piper
+   (offline, más natural). Abel quiere algo sencillo que suene bien, no
+   complejo. Motor intercambiable. Aún no se construye; Abel decide si se
+   incluye en la próxima versión.
 
 Pendiente conocido para el futuro (mencionado pero no diseñado a fondo
 todavía): que la app se abra sola al iniciar Windows (el empaquetado en sí

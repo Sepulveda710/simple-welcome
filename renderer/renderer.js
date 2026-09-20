@@ -1574,6 +1574,32 @@ document.getElementById('abrir-form-fuente').addEventListener('click', () => {
 });
 document.getElementById('guardar-nueva-fuente').addEventListener('click', guardarNuevaFuente);
 
+// --- Comentarios (Configuración > Comentarios) ---
+//
+// Nada se envía desde la app: los botones solo abren una página en el
+// navegador del usuario, donde él decide qué escribir y si lo manda.
+// URL_FORMULARIO_COMENTARIOS se llena cuando exista el formulario
+// (Google Forms o Tally); mientras esté vacía, el botón queda oculto.
+const URL_FORMULARIO_COMENTARIOS = '';
+const URL_GITHUB_ISSUES = 'https://github.com/Sepulveda710/simple-welcome/issues/new';
+
+// Prellena el cuerpo del issue con la versión — GitHub lo muestra completo
+// antes de enviar, así que el usuario ve y puede borrar lo que quiera.
+function urlComentariosGithub(version) {
+  const cuerpo = `Versión de Simple Welcome: ${version}\n\n(Escribe aquí tu comentario o describe el error)`;
+  return `${URL_GITHUB_ISSUES}?body=${encodeURIComponent(cuerpo)}`;
+}
+
+if (URL_FORMULARIO_COMENTARIOS) {
+  document.getElementById('abrir-formulario-comentarios').classList.remove('oculto');
+}
+document.getElementById('abrir-formulario-comentarios').addEventListener('click', () => {
+  window.api.abrirExterno(URL_FORMULARIO_COMENTARIOS);
+});
+document.getElementById('abrir-issues-github').addEventListener('click', async () => {
+  window.api.abrirExterno(urlComentariosGithub(await window.api.obtenerVersionApp()));
+});
+
 
 // --- Atajos de teclado ---
 // Todo vive en un solo listener para que sea fácil ver de un vistazo qué
