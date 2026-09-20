@@ -1378,23 +1378,32 @@ document.getElementById('abrir-form-recordatorio-grande').addEventListener('clic
 
 // --- Panel de configuración ---
 
-// El catálogo completo de Chía como chips seleccionables — la elegida
-// queda en esta variable hasta que se guarde de verdad (mismo patrón que
-// el resto del formulario: nada se persiste hasta tocar "Guardar cambios").
-let caraChiaSeleccionadaEnFormulario = 'relajado';
+// Los cambios de Configuración se aplican y guardan AL MOMENTO, como en la
+// Configuración de Windows — no hay botón "Guardar". Más abajo están los
+// listeners de cada control.
+
+// Los eventos "change" no traen coordenadas de mouse; la animación
+// circular del cambio de tema necesita un punto de origen, así que se usa
+// el centro del propio control.
+function origenDe(elemento) {
+  const caja = elemento.getBoundingClientRect();
+  return { clientX: caja.left + caja.width / 2, clientY: caja.top + caja.height / 2 };
+}
 
 function pintarSelectorCarasChia(seleccionActual) {
-  caraChiaSeleccionadaEnFormulario = seleccionActual;
   const contenedor = document.getElementById('selector-caras-chia');
   contenedor.innerHTML = '';
 
   Object.entries(EXPRESIONES_CHIA).forEach(([id, expresion]) => {
     const boton = document.createElement('button');
     boton.type = 'button';
-    boton.className = `opcion-cara-chia ${id === caraChiaSeleccionadaEnFormulario ? 'seleccionada' : ''}`;
+    boton.className = `opcion-cara-chia ${id === seleccionActual ? 'seleccionada' : ''}`;
     boton.textContent = expresion.cara;
     boton.title = expresion.nombre;
-    boton.addEventListener('click', () => pintarSelectorCarasChia(id));
+    boton.addEventListener('click', () => {
+      pintarSelectorCarasChia(id);
+      guardarCampoConfiguracion({ caraChiaPredeterminada: id }, origenDe(boton));
+    });
     contenedor.appendChild(boton);
   });
 }
@@ -1411,20 +1420,29 @@ function poblarFormularioConfiguracion(config) {
   pintarSelectorCarasChia(config.caraChiaPredeterminada || 'relajado');
 }
 
-// Todo lo que debe verse reflejado DE INMEDIATO en el resto de la app,
-// sin esperar a cerrar Configuración ni reiniciar — lo usan tanto
-// "Guardar cambios" como "Restablecer predeterminados".
-function aplicarConfigEnVivo(config, evento) {
-  cambiarTema(config.tema, evento.clientX, evento.clientY);
-  actualizarIconoTema(config.tema);
+// Todo lo que debe verse reflejado DE INMEDIATO en el resto de la app —
+// lo usan tanto cada cambio individual como "Restablecer". Se llama
+// después de CUALQUIER cambio, así que solo actúa sobre lo que de verdad
+// cambió: si no, la animación circular del tema se dispararía con cada
+// campo, y Chía perdería un estado temporal (ej. "triste" sin internet).
+function aplicarConfigEnVivo(config, origen) {
+  if (document.documentElement.dataset.tema !== config.tema) {
+    cambiarTema(config.tema, origen.clientX, origen.clientY);
+    actualizarIconoTema(config.tema);
+  }
   document.getElementById('modo-lectura').classList.toggle('calido', Boolean(config.modoCalidoLectura));
   document.getElementById('alternar-calido').classList.toggle('guardado', Boolean(config.modoCalidoLectura));
 
-  NOTICIAS_POR_PAGINA = config.noticiasPorPagina;
-  noticiasVisibles = NOTICIAS_POR_PAGINA;
+  if (NOTICIAS_POR_PAGINA !== config.noticiasPorPagina) {
+    NOTICIAS_POR_PAGINA = config.noticiasPorPagina;
+    noticiasVisibles = NOTICIAS_POR_PAGINA;
+  }
 
-  caraChiaPredeterminada = config.caraChiaPredeterminada || 'relajado';
-  mostrarExpresionChia(caraChiaPredeterminada);
+  const caraNueva = config.caraChiaPredeterminada || 'relajado';
+  if (caraNueva !== caraChiaPredeterminada) {
+    caraChiaPredeterminada = caraNueva;
+    mostrarExpresionChia(caraChiaPredeterminada);
+  }
 }
 
 // Menú de secciones (izquierda) — muestra una sección a la vez.
@@ -1445,6 +1463,7 @@ document.querySelectorAll('.item-menu-configuracion').forEach((boton) => {
 async function abrirConfiguracion() {
   const config = await window.api.obtenerConfiguracion();
   poblarFormularioConfiguracion(config);
+  mostrarAvisoCiudad('', false);
   mostrarSeccionConfiguracion('perfil');
   pintarListaFuentes();
   abrirCapaModal('panel-configuracion', 'contenido-configuracion');
@@ -1454,41 +1473,68 @@ async function cerrarConfiguracion() {
   await cerrarCapaModal('panel-configuracion', 'contenido-configuracion');
 }
 
-async function guardarCambiosConfiguracion(evento) {
-  const nombre = document.getElementById('input-nombre').value.trim() || 'Usuario';
-  const tema = document.getElementById('input-tema').value;
-  const modoCalidoLectura = document.getElementById('input-modo-calido-lectura').checked;
-  const ciudadEscrita = document.getElementById('input-ciudad').value.trim();
-  const noticiasPorPagina = Number(document.getElementById('input-noticias-pagina').value);
-  const unidadTemperatura = document.getElementById('input-unidad-temperatura').value;
-  const formato24h = document.getElementById('input-formato-hora').value === '24';
+// Guarda UN cambio (solo las claves que trae) y refleja en la app lo que
+// depende de él. Es lo que llaman todos los controles de Configuración.
+async function guardarCampoConfiguracion(cambios, origen) {
+  const nuevaConfig = await window.api.guardarConfiguracion(cambios);
+  aplicarConfigEnVivo(nuevaConfig, origen);
 
-  const cambios = {
-    nombre, tema, modoCalidoLectura, noticiasPorPagina,
-    unidadTemperatura, formato24h,
-    iniciarConWindows: document.getElementById('input-iniciar-con-windows').checked,
-    caraChiaPredeterminada: caraChiaSeleccionadaEnFormulario
-  };
+  if ('nombre' in cambios || 'formato24h' in cambios) await pintarSaludo();
+  if ('unidadTemperatura' in cambios || 'ciudad' in cambios) pintarClima();
+  if ('noticiasPorPagina' in cambios) pintarListaDesdeCache();
+}
 
-  if (ciudadEscrita) {
-    const encontrada = await window.api.buscarCiudad(ciudadEscrita);
-    if (encontrada) {
-      cambios.ciudad = encontrada.ciudad;
-      cambios.latitud = encontrada.latitud;
-      cambios.longitud = encontrada.longitud;
-    } else {
-      alert(`No se encontró "${ciudadEscrita}". El clima se queda con la ubicación anterior.`);
-    }
+// Cada control → qué claves de la configuración produce.
+const CAMPOS_CONFIGURACION = {
+  'input-nombre': (el) => ({ nombre: el.value.trim() || 'Usuario' }),
+  'input-tema': (el) => ({ tema: el.value }),
+  'input-modo-calido-lectura': (el) => ({ modoCalidoLectura: el.checked }),
+  'input-noticias-pagina': (el) => ({ noticiasPorPagina: Number(el.value) }),
+  'input-unidad-temperatura': (el) => ({ unidadTemperatura: el.value }),
+  'input-formato-hora': (el) => ({ formato24h: el.value === '24' }),
+  'input-iniciar-con-windows': (el) => ({ iniciarConWindows: el.checked })
+};
+
+Object.entries(CAMPOS_CONFIGURACION).forEach(([id, aCambios]) => {
+  const elemento = document.getElementById(id);
+  elemento.addEventListener('change', () => guardarCampoConfiguracion(aCambios(elemento), origenDe(elemento)));
+});
+
+// La ciudad necesita buscar sus coordenadas antes de guardarse, y avisa
+// aquí mismo (no con una ventana emergente) si no la encuentra.
+function mostrarAvisoCiudad(texto, esError) {
+  const aviso = document.getElementById('aviso-ciudad');
+  aviso.textContent = texto;
+  aviso.classList.toggle('error', esError);
+  aviso.classList.toggle('oculto', !texto);
+}
+
+document.getElementById('input-ciudad').addEventListener('change', async (evento) => {
+  const campo = evento.target;
+  const escrita = campo.value.trim();
+  if (!escrita) {
+    // Vacío = no borrar la ubicación guardada; se restaura lo que había.
+    campo.value = (await window.api.obtenerConfiguracion()).ciudad || '';
+    mostrarAvisoCiudad('', false);
+    return;
   }
 
-  const nuevaConfig = await window.api.guardarConfiguracion(cambios);
-  aplicarConfigEnVivo(nuevaConfig, evento);
-
-  await cerrarConfiguracion();
-  await pintarSaludo(); // para que el nombre/formato de hora nuevos se vean de inmediato
-  pintarListaDesdeCache();
-  pintarClima(); // por si la ciudad o la unidad cambiaron
-}
+  try {
+    const encontrada = await window.api.buscarCiudad(escrita);
+    if (!encontrada) {
+      mostrarAvisoCiudad(`No se encontró "${escrita}". El clima se queda con la ubicación anterior.`, true);
+      return;
+    }
+    campo.value = encontrada.ciudad;
+    await guardarCampoConfiguracion(
+      { ciudad: encontrada.ciudad, latitud: encontrada.latitud, longitud: encontrada.longitud },
+      origenDe(campo)
+    );
+    mostrarAvisoCiudad('Ubicación actualizada.', false);
+  } catch {
+    mostrarAvisoCiudad('No se pudo buscar la ciudad. ¿Tienes internet?', true);
+  }
+});
 
 document.getElementById('restablecer-configuracion').addEventListener('click', async (evento) => {
   const confirmado = confirm(
@@ -1583,7 +1629,6 @@ async function guardarNuevaFuente() {
 
 document.getElementById('abrir-configuracion').addEventListener('click', abrirConfiguracion);
 document.getElementById('cerrar-configuracion').addEventListener('click', cerrarConfiguracion);
-document.getElementById('guardar-configuracion').addEventListener('click', guardarCambiosConfiguracion);
 document.getElementById('restablecer-leidos').addEventListener('click', restablecerEstadoLectura);
 document.getElementById('abrir-form-fuente').addEventListener('click', () => {
   document.getElementById('form-fuente').classList.toggle('colapsado');
