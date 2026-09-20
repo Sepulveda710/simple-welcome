@@ -572,13 +572,39 @@ recién abierta ya están en el PATH (si no, refrescarlo).
 **PENDIENTES ANOTADOS POR ABEL (2026-09-20) — anotados, NO ejecutar hasta
 que Abel diga "ejecuta"** (regla "anota, no ejecutes" de arriba):
 
-1. **Bug en la pantalla de Configuración: el scroll se "cuela" a la página
+**ACTUALIZACIÓN (rama `configuracion-windows`, sin publicar aún): los
+pendientes 1 y 2 de abajo YA SE HICIERON**, junto con un rediseño completo
+de Configuración que Abel eligió (opción A, estilo "Configuración de
+Windows 11"): vista con menú de secciones a la izquierda (Perfil y clima,
+Apariencia, Fuentes, Chía, Inicio, Comentarios, Acerca de) y contenido a
+la derecha; el contenido hace scroll por su cuenta (`overscroll-behavior:
+contain`) y `html:has(.capa-configuracion:not(.oculto)) { overflow:
+hidden; scrollbar-gutter: stable }` bloquea el scroll de la página de
+atrás para TODAS las ventanas emergentes. Los cambios se **aplican y
+guardan al momento** (sin botón "Guardar cambios"): `CAMPOS_CONFIGURACION`
+y `guardarCampoConfiguracion()` en `renderer.js`; `aplicarConfigEnVivo()`
+ahora solo actúa sobre lo que cambió (si no, la animación circular de
+tema y el estado de Chía se dispararían en cada campo). La ciudad avisa
+en línea (`#aviso-ciudad`) en vez de `alert`. **Editar fuentes**:
+`editarFuente()` + `validarFuente()` en `gestion-fuentes.js` (nombre
+obligatorio, URL http(s), sin URLs repetidas; `agregarFuente`/`editarFuente`
+devuelven `{ ok, fuentes }` o `{ ok:false, error }`, no lanzan errores),
+lápiz ✎ en cada tarjeta, mismo formulario para agregar y editar,
+sugerencias de categoría (`<datalist>`), Enter guarda.
+- **Técnica de verificación visual segura** (usada aquí): desde
+  `main.js`, `ventana.webContents.capturePage()` captura SOLO la ventana de
+  la app (no el escritorio) y se guarda en el scratchpad para leerla. Trampa:
+  si la ventana no está repintando, devuelve un cuadro viejo (una captura
+  salió con el estado de arranque) — confirmar el estado con el DOM, no
+  solo con la imagen.
+
+1. **[HECHO] Bug en la pantalla de Configuración: el scroll se "cuela" a la página
    de atrás.** Al hacer scroll dentro de Configuración también se mueve la
    página principal de noticias. Probable arreglo: `overscroll-behavior:
    contain` en el contenido del modal y/o bloquear el scroll del body
    mientras haya un modal abierto (aplica a todos los `.capa-configuracion`,
    no solo Configuración — revisar Guardados, Ver por fuente, calendario).
-2. **Poder EDITAR una fuente ya agregada** (hoy solo se puede borrar y
+2. **[HECHO] Poder EDITAR una fuente ya agregada** (hoy solo se puede borrar y
    volver a crear). Caso real: Abel agregó una fuente de motorización sin
    categoría y tuvo que borrarla y rehacerla. Editar nombre, URL,
    categoría y color desde "Mis fuentes" (`gestion-fuentes.js` +
