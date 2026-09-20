@@ -505,12 +505,37 @@ release — eso quedó pendiente para esa sesión).
   para apps personales/indie sin certificado, no es un error de la
   configuración.
 
-**Pendiente inmediato (la sesión que sigue, a propósito):** crear el
-repositorio en GitHub (decidir público/privado — si es privado,
-`electron-updater` necesita un token para las descargas), reemplazar
-`TU-USUARIO-DE-GITHUB`/`TU-REPO` en `package.json` con los datos reales,
-`git init` en este proyecto (todavía no es un repo git), y correr
-`npm run release` para el primer release de verdad.
+**Sesión 2026-09-20: GitHub montado y primer release publicado.**
+Repo público: https://github.com/Sepulveda710/simple-welcome (Abel eligió
+público — el actualizador funciona sin token). `package.json` ya apunta a
+`owner: Sepulveda710, repo: simple-welcome, releaseType: release` (sin
+`releaseType`, electron-builder publica borradores y el actualizador no
+los ve). Los commits usan el correo noreply de GitHub
+(`<id>+Sepulveda710@users.noreply.github.com`, configurado solo en este
+repo) para no publicar el correo personal de Abel. Primer release: v5.7.0
+(instalador de 108 MB + `latest.yml` + blockmap). Abel inició sesión con
+`gh auth login` él mismo; el token vive en el llavero de Windows, no en
+ningún archivo del proyecto.
+
+**Cómo publicar una versión nueva** (probado — hay una trampa):
+1. Subir la versión en `package.json` (regla de versionado arriba), commit
+   y `git push`.
+2. **Crear el release ANTES** de correr el empaquetador:
+   `gh release create vX.Y.Z --title "X.Y.Z" --notes "..."` (esto crea
+   también el tag). Si no, `electron-builder` sube dos archivos en
+   paralelo y ambos intentan crear el release a la vez: uno gana, el otro
+   falla con "422 Published releases must have a valid tag" y el
+   instalador no se sube (así pasó en el primer intento; hubo que
+   borrar el release a medias y repetir).
+3. `$env:GH_TOKEN = (gh auth token); npm run release` — sube instalador,
+   blockmap y `latest.yml` al release ya creado. El token solo vive en
+   esa sesión de PowerShell.
+4. Verificar con `gh release view vX.Y.Z --json assets`: deben estar los
+   TRES archivos (`.exe`, `.exe.blockmap`, `latest.yml`).
+Las instalaciones existentes se actualizan solas al abrir la app.
+
+`git` y `gh` se instalaron con winget en esta sesión; en una terminal
+recién abierta ya están en el PATH (si no, refrescarlo).
 
 No hay pendientes anotados sin ejecutar en este momento — cualquier lista de
 "pendientes" que Abel mencione es nueva a partir de aquí.
