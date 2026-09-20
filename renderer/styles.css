@@ -942,6 +942,111 @@ html.con-tinte[data-tema="claro"] #modo-lectura:not(.calido) .encabezado-articul
   color: var(--accent-texto);
 }
 
+/* --- Configuración estilo "Configuración de Windows 11" ---
+   Menú de secciones a la izquierda, contenido a la derecha. */
+.contenido-configuracion.vista-configuracion {
+  width: min(880px, calc(100vw - 40px));
+  height: min(640px, calc(100vh - 40px));
+  max-height: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 210px 1fr;
+  overflow: hidden;
+  /* Casi opaco a propósito: con la transparencia normal de las tarjetas,
+     el texto de las noticias de atrás se cruzaba con el formulario y
+     estorbaba al leer. */
+  background: rgba(250, 250, 252, 0.98);
+}
+:root[data-tema="oscuro"] .contenido-configuracion.vista-configuracion {
+  background: rgba(36, 36, 38, 0.98);
+}
+
+.menu-configuracion {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 18px 10px;
+  border-right: 1px solid var(--borde);
+  background: color-mix(in srgb, var(--texto) 3%, transparent);
+  overflow-y: auto;
+}
+.titulo-menu-configuracion {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 14px 10px;
+}
+.item-menu-configuracion {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border: none;
+  border-radius: var(--radio);
+  background: none;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--texto);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.item-menu-configuracion:hover { background: color-mix(in srgb, var(--texto) 7%, transparent); }
+.item-menu-configuracion:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.item-menu-configuracion.activo { background: var(--accent-fondo); font-weight: 600; }
+.item-menu-configuracion.activo::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 9px;
+  bottom: 9px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+.icono-menu-configuracion { width: 24px; text-align: center; font-size: 15px; flex-shrink: 0; }
+.icono-menu-configuracion.cara-chia { animation: none; font-size: 10px; letter-spacing: 0; white-space: nowrap; }
+
+/* El contenido hace scroll por su cuenta y no lo pasa a lo de atrás
+   (overscroll-behavior: contain) — antes, al llegar al final de
+   Configuración, la página principal empezaba a moverse. */
+.contenido-seccion-configuracion {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 22px 28px 16px;
+}
+.boton-cerrar-configuracion { position: absolute; top: 12px; right: 14px; z-index: 2; }
+.seccion-configuracion { flex: 1; }
+.seccion-configuracion .titulo-seccion-configuracion {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--texto);
+  margin: 0 0 18px;
+  padding-right: 36px;
+}
+.pie-configuracion {
+  position: sticky;
+  bottom: -16px;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+  padding: 12px 0 0;
+}
+.titulo-form-fuente { margin: 0 0 12px; font-size: 14px; font-weight: 600; }
+.error-form-fuente { margin: 0 0 10px; font-size: 12.5px; color: #c62828; }
+
+/* Mientras haya CUALQUIER ventana emergente abierta (Configuración,
+   Guardados, calendario grande…) la página de atrás no debe moverse con
+   la rueda del mouse. scrollbar-gutter evita que el contenido "salte"
+   al desaparecer la barra de scroll. */
+html:has(.capa-configuracion:not(.oculto)) {
+  overflow: hidden;
+  scrollbar-gutter: stable;
+}
+
 .ayuda-comentarios {
   margin: 0 0 10px;
   font-size: 12.5px;

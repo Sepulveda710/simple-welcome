@@ -1427,9 +1427,25 @@ function aplicarConfigEnVivo(config, evento) {
   mostrarExpresionChia(caraChiaPredeterminada);
 }
 
+// Menú de secciones (izquierda) — muestra una sección a la vez.
+function mostrarSeccionConfiguracion(id) {
+  document.querySelectorAll('.item-menu-configuracion').forEach((boton) => {
+    boton.classList.toggle('activo', boton.dataset.seccion === id);
+  });
+  document.querySelectorAll('.seccion-configuracion').forEach((seccion) => {
+    seccion.classList.toggle('oculto', seccion.dataset.seccion !== id);
+  });
+  document.querySelector('.contenido-seccion-configuracion').scrollTop = 0;
+}
+
+document.querySelectorAll('.item-menu-configuracion').forEach((boton) => {
+  boton.addEventListener('click', () => mostrarSeccionConfiguracion(boton.dataset.seccion));
+});
+
 async function abrirConfiguracion() {
   const config = await window.api.obtenerConfiguracion();
   poblarFormularioConfiguracion(config);
+  mostrarSeccionConfiguracion('perfil');
   pintarListaFuentes();
   abrirCapaModal('panel-configuracion', 'contenido-configuracion');
 }

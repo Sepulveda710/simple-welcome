@@ -155,158 +155,174 @@
 
   </div>
 
-  <!-- Panel de configuración: oculto hasta que se abre -->
+  <!-- Configuración: vista tipo "Configuración de Windows 11" — menú de
+       secciones a la izquierda y el contenido de la elegida a la derecha,
+       oculta hasta que se abre. Cada sección es corta, así que casi no
+       hay scroll, y el contenido hace scroll por su cuenta (ver
+       .contenido-seccion-configuracion en styles.css). -->
   <div id="panel-configuracion" class="oculto capa-configuracion">
-    <div id="contenido-configuracion" class="tarjeta contenido-configuracion">
-      <div class="cabecera-configuracion">
-        <h2>Configuración</h2>
-        <button id="cerrar-configuracion" class="boton-nav">✕</button>
+    <div id="contenido-configuracion" class="tarjeta contenido-configuracion vista-configuracion">
+
+      <nav class="menu-configuracion" aria-label="Secciones de configuración">
+        <h2 class="titulo-menu-configuracion">Configuración</h2>
+        <button type="button" class="item-menu-configuracion activo" data-seccion="perfil"><span class="icono-menu-configuracion">👤</span> Perfil y clima</button>
+        <button type="button" class="item-menu-configuracion" data-seccion="apariencia"><span class="icono-menu-configuracion">🎨</span> Apariencia</button>
+        <button type="button" class="item-menu-configuracion" data-seccion="fuentes"><span class="icono-menu-configuracion">📰</span> Fuentes</button>
+        <button type="button" class="item-menu-configuracion" data-seccion="chia"><span class="icono-menu-configuracion cara-chia">^-^</span> Chía</button>
+        <button type="button" class="item-menu-configuracion" data-seccion="inicio"><span class="icono-menu-configuracion">☕</span> Inicio</button>
+        <button type="button" class="item-menu-configuracion" data-seccion="comentarios"><span class="icono-menu-configuracion">💬</span> Comentarios</button>
+        <button type="button" class="item-menu-configuracion" data-seccion="acerca"><span class="icono-menu-configuracion">ⓘ</span> Acerca de</button>
+      </nav>
+
+      <div class="contenido-seccion-configuracion">
+        <button id="cerrar-configuracion" class="boton-nav boton-cerrar-configuracion" title="Cerrar (Esc)">✕</button>
+
+        <section class="seccion-configuracion" data-seccion="perfil">
+          <h3 class="titulo-seccion-configuracion">Perfil y clima</h3>
+
+          <div class="fila-configuracion">
+            <label class="campo-configuracion">
+              <span>Tu nombre</span>
+              <input type="text" id="input-nombre" />
+            </label>
+            <label class="campo-configuracion">
+              <span>Ciudad (para el clima)</span>
+              <input type="text" id="input-ciudad" placeholder="Ej. Tapachula, Chiapas" />
+            </label>
+          </div>
+
+          <div class="fila-configuracion">
+            <label class="campo-configuracion">
+              <span>Unidad de temperatura</span>
+              <select id="input-unidad-temperatura">
+                <option value="celsius">°C — Celsius</option>
+                <option value="fahrenheit">°F — Fahrenheit</option>
+              </select>
+            </label>
+            <label class="campo-configuracion">
+              <span>Formato de hora</span>
+              <select id="input-formato-hora">
+                <option value="12">12 horas (2:30 p. m.)</option>
+                <option value="24">24 horas (14:30)</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section class="seccion-configuracion oculto" data-seccion="apariencia">
+          <h3 class="titulo-seccion-configuracion">Apariencia</h3>
+
+          <div class="fila-configuracion">
+            <label class="campo-configuracion">
+              <span>Tema</span>
+              <select id="input-tema">
+                <option value="claro">Claro</option>
+                <option value="oscuro">Oscuro</option>
+              </select>
+            </label>
+            <label class="campo-configuracion">
+              <span>Noticias por página</span>
+              <select id="input-noticias-pagina">
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="30">30</option>
+              </select>
+            </label>
+          </div>
+
+          <label class="campo-configuracion campo-interruptor">
+            <span>Modo cálido al leer noticias <small>(reduce fatiga visual — independiente del tema)</small></span>
+            <span class="interruptor"><input type="checkbox" id="input-modo-calido-lectura" /><span class="interruptor-riel"></span></span>
+          </label>
+        </section>
+
+        <section class="seccion-configuracion oculto seccion-fuentes" data-seccion="fuentes">
+          <h3 class="titulo-seccion-configuracion">Fuentes de noticias</h3>
+          <div id="lista-fuentes" class="lista-fuentes"></div>
+          <button id="abrir-form-fuente" class="boton-mas-recordatorio">+ Agregar fuente</button>
+          <div id="form-fuente" class="formulario-colapsable colapsado">
+            <h4 id="titulo-form-fuente" class="titulo-form-fuente">Nueva fuente</h4>
+            <label class="campo-configuracion">
+              <span>Nombre</span>
+              <input type="text" id="input-nombre-fuente" placeholder="Ej. Espresso Matutino" />
+            </label>
+            <label class="campo-configuracion">
+              <span>URL del RSS</span>
+              <input type="text" id="input-url-fuente" placeholder="https://…" />
+            </label>
+            <label class="campo-configuracion">
+              <span>Categoría</span>
+              <input type="text" id="input-categoria-fuente" placeholder="Ej. Economía" list="lista-categorias-fuentes" />
+              <datalist id="lista-categorias-fuentes"></datalist>
+            </label>
+            <label class="campo-configuracion">
+              <span>Color de identidad</span>
+              <input type="color" id="input-color-fuente" value="#0067c0" />
+            </label>
+            <p id="error-form-fuente" class="error-form-fuente oculto"></p>
+            <div class="acciones-configuracion">
+              <button id="cancelar-form-fuente" class="boton-nav" type="button">Cancelar</button>
+              <button id="guardar-nueva-fuente" class="boton-cargar-mas" type="button">Guardar fuente</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="seccion-configuracion oculto" data-seccion="chia">
+          <h3 class="titulo-seccion-configuracion">Asistente Chía</h3>
+          <div class="campo-configuracion">
+            <span>Cara predeterminada</span>
+            <div id="selector-caras-chia" class="selector-caras-chia"></div>
+          </div>
+        </section>
+
+        <section class="seccion-configuracion oculto" data-seccion="inicio">
+          <h3 class="titulo-seccion-configuracion">Al encender tu computadora</h3>
+
+          <label class="campo-configuracion campo-interruptor">
+            <span>Abrir Simple Welcome al iniciar Windows <small>(solo en la versión instalada)</small></span>
+            <span class="interruptor"><input type="checkbox" id="input-iniciar-con-windows" /><span class="interruptor-riel"></span></span>
+          </label>
+
+          <p class="mensaje-proposito">
+            Simple Welcome nació para recuperar un hábito que se estaba perdiendo:
+            sentarte con un café o una comida y ponerte al día leyendo las noticias
+            que de verdad te interesan, directo de sus fuentes, en lugar de dejar
+            que las redes sociales decidan qué llega a tus ojos. Por eso conviene
+            que abra sola al encender tu computadora: es el momento natural para
+            enterarte de lo que se hizo, se planea o se rumorea, al empezar el día
+            o al prepararte para dormir. Si prefieres abrirla tú, apágalo aquí.
+          </p>
+        </section>
+
+        <section class="seccion-configuracion oculto" data-seccion="comentarios">
+          <h3 class="titulo-seccion-configuracion">Comentarios</h3>
+          <p class="ayuda-comentarios">
+            ¿Tienes una idea o encontraste un error? Cuéntalo. Se abre en tu
+            navegador y tú decides qué escribir y si lo envías; la app no manda
+            nada por su cuenta.
+          </p>
+          <div class="acciones-configuracion">
+            <button id="abrir-formulario-comentarios" class="boton-nav oculto" type="button">Enviar un comentario</button>
+            <button id="abrir-issues-github" class="boton-nav" type="button">Reportar en GitHub</button>
+          </div>
+        </section>
+
+        <section class="seccion-configuracion oculto" data-seccion="acerca">
+          <h3 class="titulo-seccion-configuracion">Acerca de</h3>
+          <div class="acerca-de">
+            <p class="acerca-de-titulo">Simple Welcome</p>
+            <p class="acerca-de-version" id="acerca-de-version">Cargando versión…</p>
+          </div>
+          <hr />
+          <button id="restablecer-leidos" class="boton-nav boton-ancho">Restablecer estado de lectura</button>
+          <button id="restablecer-configuracion" class="boton-nav boton-ancho">Restablecer configuración a los valores de fábrica</button>
+        </section>
+
+        <div class="pie-configuracion">
+          <button id="guardar-configuracion" class="boton-cargar-mas" type="button">Guardar cambios</button>
+        </div>
       </div>
 
-      <section class="grupo-configuracion">
-        <h3 class="titulo-grupo-configuracion"><span class="icono-grupo-configuracion">👤</span> Perfil y clima</h3>
-
-        <div class="fila-configuracion">
-          <label class="campo-configuracion">
-            <span>Tu nombre</span>
-            <input type="text" id="input-nombre" />
-          </label>
-          <label class="campo-configuracion">
-            <span>Ciudad (para el clima)</span>
-            <input type="text" id="input-ciudad" placeholder="Ej. Tapachula, Chiapas" />
-          </label>
-        </div>
-
-        <div class="fila-configuracion">
-          <label class="campo-configuracion">
-            <span>Unidad de temperatura</span>
-            <select id="input-unidad-temperatura">
-              <option value="celsius">°C — Celsius</option>
-              <option value="fahrenheit">°F — Fahrenheit</option>
-            </select>
-          </label>
-          <label class="campo-configuracion">
-            <span>Formato de hora</span>
-            <select id="input-formato-hora">
-              <option value="12">12 horas (2:30 p. m.)</option>
-              <option value="24">24 horas (14:30)</option>
-            </select>
-          </label>
-        </div>
-      </section>
-
-      <section class="grupo-configuracion">
-        <h3 class="titulo-grupo-configuracion"><span class="icono-grupo-configuracion">🎛️</span> Interfaz y noticias</h3>
-
-        <div class="fila-configuracion">
-          <label class="campo-configuracion">
-            <span>Tema</span>
-            <select id="input-tema">
-              <option value="claro">Claro</option>
-              <option value="oscuro">Oscuro</option>
-            </select>
-          </label>
-          <label class="campo-configuracion">
-            <span>Noticias por página</span>
-            <select id="input-noticias-pagina">
-              <option value="10">10</option>
-              <option value="20">20</option>
-              <option value="30">30</option>
-            </select>
-          </label>
-        </div>
-
-        <label class="campo-configuracion campo-interruptor">
-          <span>Modo cálido al leer noticias <small>(reduce fatiga visual — independiente del tema)</small></span>
-          <span class="interruptor"><input type="checkbox" id="input-modo-calido-lectura" /><span class="interruptor-riel"></span></span>
-        </label>
-      </section>
-
-      <section class="grupo-configuracion">
-        <h3 class="titulo-grupo-configuracion"><span class="icono-grupo-configuracion">☕</span> Al encender tu computadora</h3>
-
-        <label class="campo-configuracion campo-interruptor">
-          <span>Abrir Simple Welcome al iniciar Windows <small>(solo en la versión instalada)</small></span>
-          <span class="interruptor"><input type="checkbox" id="input-iniciar-con-windows" /><span class="interruptor-riel"></span></span>
-        </label>
-
-        <p class="mensaje-proposito">
-          Simple Welcome nació para recuperar un hábito que se estaba perdiendo:
-          sentarte con un café o una comida y ponerte al día leyendo las noticias
-          que de verdad te interesan, directo de sus fuentes, en lugar de dejar
-          que las redes sociales decidan qué llega a tus ojos. Por eso conviene
-          que abra sola al encender tu computadora: es el momento natural para
-          enterarte de lo que se hizo, se planea o se rumorea, al empezar el día
-          o al prepararte para dormir. Si prefieres abrirla tú, apágalo aquí.
-        </p>
-      </section>
-
-      <section class="grupo-configuracion">
-        <h3 class="titulo-grupo-configuracion"><span class="icono-grupo-configuracion cara-chia">[ ^ - ^ ]</span> Asistente Chía</h3>
-
-        <div class="campo-configuracion">
-          <span>Cara predeterminada</span>
-          <div id="selector-caras-chia" class="selector-caras-chia"></div>
-        </div>
-      </section>
-
-      <hr />
-
-      <button id="restablecer-leidos" class="boton-nav boton-ancho">Restablecer estado de lectura</button>
-
-      <hr />
-
-      <section class="grupo-configuracion seccion-fuentes">
-        <h3 class="titulo-grupo-configuracion"><span class="icono-grupo-configuracion">📰</span> Mis fuentes de noticias</h3>
-        <div id="lista-fuentes" class="lista-fuentes"></div>
-        <button id="abrir-form-fuente" class="boton-mas-recordatorio">+ Agregar fuente</button>
-        <div id="form-fuente" class="formulario-colapsable colapsado">
-          <label class="campo-configuracion">
-            <span>Nombre</span>
-            <input type="text" id="input-nombre-fuente" placeholder="Ej. Espresso Matutino" />
-          </label>
-          <label class="campo-configuracion">
-            <span>URL del RSS</span>
-            <input type="text" id="input-url-fuente" placeholder="https://…" />
-          </label>
-          <label class="campo-configuracion">
-            <span>Categoría</span>
-            <input type="text" id="input-categoria-fuente" placeholder="Ej. Economía" />
-          </label>
-          <label class="campo-configuracion">
-            <span>Color de identidad</span>
-            <input type="color" id="input-color-fuente" value="#0067c0" />
-          </label>
-          <button id="guardar-nueva-fuente" class="boton-cargar-mas">Guardar fuente</button>
-        </div>
-      </section>
-
-      <div class="acciones-configuracion">
-        <button id="restablecer-configuracion" class="boton-nav">Restablecer predeterminados</button>
-        <button id="guardar-configuracion" class="boton-cargar-mas">Guardar cambios</button>
-      </div>
-
-      <hr />
-
-      <section class="grupo-configuracion">
-        <h3 class="titulo-grupo-configuracion"><span class="icono-grupo-configuracion">💬</span> Comentarios</h3>
-        <p class="ayuda-comentarios">
-          ¿Tienes una idea o encontraste un error? Cuéntalo. Se abre en tu
-          navegador y tú decides qué escribir y si lo envías; la app no manda
-          nada por su cuenta.
-        </p>
-        <div class="acciones-configuracion">
-          <button id="abrir-formulario-comentarios" class="boton-nav oculto" type="button">Enviar un comentario</button>
-          <button id="abrir-issues-github" class="boton-nav" type="button">Reportar en GitHub</button>
-        </div>
-      </section>
-
-      <hr />
-
-      <div class="acerca-de">
-        <p class="acerca-de-titulo">Simple Welcome</p>
-        <p class="acerca-de-version" id="acerca-de-version">Cargando versión…</p>
-      </div>
     </div>
   </div>
 
