@@ -31,7 +31,7 @@ seguir la serie de Y (5.3). Regla real:
   acumulación tan grande que Y ya se sentiría absurdo (¿5.19?). Ante la
   duda, es Y — Abel prefiere corregir un X de más rebajándolo que ver la
   beta subir de número principal seguido.
-- Estamos en **Beta 5.9** al momento de escribir esto (4.0 → 4.1: separar
+- Estamos en **Beta 5.10** al momento de escribir esto (4.0 → 4.1: separar
   el tema claro/oscuro del modo cálido de lectura, que antes compartían la
   misma variable — ver "Decisiones técnicas importantes" abajo. 4.1 → 4.2:
   mejoras a la barra lateral del modo lectura. 4.2 → 5.0: portada del
@@ -50,7 +50,12 @@ seguir la serie de Y (5.3). Regla real:
   con actualización automática. 5.7 → 5.8: inicio con Windows + el "por
   qué" de la app. 5.8 → 5.9: instalador nítido en pantallas de alta
   resolución, caja de comentarios y Configuración rediseñada estilo
-  Windows 11 con edición de fuentes — ver "Estado actual").
+  Windows 11 con edición de fuentes. 5.9 → 5.10: lector de noticias en voz
+  alta (voces de Windows) y la Revista del Consumidor de Profeco como
+  fuente — ver "Estado actual").
+
+  Ojo: las versiones son X.Y numéricas, no decimales — 5.10 va DESPUÉS de
+  5.9 (package.json "5.10.0", electron-updater lo compara bien con semver).
 
 ## Cómo le gusta trabajar a Abel (el usuario)
 
@@ -648,6 +653,8 @@ sugerencias de categoría (`<datalist>`), Enter guarda.
    (offline, más natural). Abel quiere algo sencillo que suene bien, no
    complejo. Motor intercambiable. Aún no se construye; Abel decide si se
    incluye en la próxima versión.
+
+**Pendiente detectado al probar 5.10 (bug menor previo, no arreglado):** la CSP (`script-src 'self'`, agregada en 5.2) bloquea los manejadores `onerror="..."` en línea de las imágenes (favicon del encabezado en `index.html`, `favicon-lateral`, miniaturas de tarjetas/guardados, portada) — cuando una imagen falla, NO se oculta/quita como se pretendía y queda el ícono roto. Arreglo: quitar los `onerror` inline y usar un solo `document.addEventListener("error", ..., true)` que oculte `<img>` rotas (delegación en fase de captura, los eventos error de img no burbujean).
 
 **Revista del Consumidor (Profeco) como fuente — HECHA en la rama `revista-consumidor`, sin publicar aún** (Abel pidió "la opción 1", 2026-09-20). La revista NO tiene RSS: su sitio es una app de JS que lee la API pública `https://bibliotecadelconsumidor.profeco.gob.mx/api/revista` (sin llave, no documentada; otros endpoints dan 401) y cada artículo es un PDF mensual (~19 por edición, todos con la misma fecha). `src/fuente-profeco.js` la lee y devuelve el contrato normal más `detalle` (sección, ej. "Guía de consumo") y `externo: true`; `lector-rss.js` la elige solo cuando la URL de la fuente es de `revistadelconsumidor.profeco.gob.mx` o `bibliotecadelconsumidor.profeco.gob.mx` (dominio exacto), así que Abel la agrega desde Configuración > Fuentes con la URL del sitio, como cualquier otra. Solo muestra la edición más reciente. En el renderer, una tarjeta `externo` abre el PDF con `abrirExterno`, se marca leída y muestra "· PDF ↗"; los externos se filtran de `articulosModoLectura` (Anterior/Siguiente, barra lateral) y en Guardados también abren fuera. Sin modo lectura ni lector de voz para PDFs — la opción 2 (extraer el texto del PDF, con librería nueva y limpieza de columnas/guiones) queda como idea si le gusta; probé que `pdftotext` saca el texto pero maquetado a columnas con palabras cortadas. Si la API cambia, falla en silencio (devuelve []). Probado por código con datos aislados (`app.setPath("userData", tmp)` temporal): 19 artículos, pestaña Consumo, clic abre el PDF y marca leída, guardados, barra lateral sin PDFs; captura visual OK.
 
