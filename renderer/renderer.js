@@ -209,6 +209,12 @@ async function actualizarEstadoConexion() {
 window.addEventListener('online', actualizarEstadoConexion);
 window.addEventListener('offline', actualizarEstadoConexion);
 
+// Línea gris bajo el título: fuente, y si la fuente lo trae, la sección
+// ("Guía de consumo") y una marca de que se abre fuera de la app (PDF).
+function textoMetaNoticia(articulo) {
+  return [articulo.fuente, articulo.detalle, articulo.externo ? 'PDF ↗' : null].filter(Boolean).join(' · ');
+}
+
 function crearTarjetaNoticia(articulo) {
   const yaLeida = leidosCache.includes(articulo.enlace);
   const yaGuardada = estaGuardado(articulo.enlace);
@@ -222,7 +228,7 @@ function crearTarjetaNoticia(articulo) {
     <div class="info-noticia">
       <span class="categoria">${escaparHtml(articulo.categoria)}</span>
       <h3>${escaparHtml(articulo.titulo)}</h3>
-      <p class="meta">${escaparHtml(articulo.fuente)}</p>
+      <p class="meta">${escaparHtml(textoMetaNoticia(articulo))}</p>
     </div>
     <div class="acciones-noticia">
       <button class="boton-marcar" title="Marcar como leída/no leída">${yaLeida ? '✓' : ''}</button>
@@ -230,10 +236,25 @@ function crearTarjetaNoticia(articulo) {
     </div>
   `;
 
-  div.addEventListener('click', () => abrirModoLectura(articulo.enlace));
-
   // El botón de marcar manual no debe abrir el artículo al hacer clic.
   const boton = div.querySelector('.boton-marcar');
+
+  div.addEventListener('click', async () => {
+    if (!articulo.externo) {
+      abrirModoLectura(articulo.enlace);
+      return;
+    }
+    // Un PDF (ej. Revista del Consumidor) no pasa por el modo lectura: se
+    // abre en el visor del sistema y aquí solo se marca como leído.
+    window.api.abrirExterno(articulo.enlace);
+    if (!leidosCache.includes(articulo.enlace)) {
+      await window.api.marcarLeido(articulo.enlace);
+      leidosCache.push(articulo.enlace);
+      div.classList.replace('no-leida', 'leida');
+      boton.textContent = '✓';
+    }
+  });
+
   boton.addEventListener('click', async (evento) => {
     evento.stopPropagation();
     await alternarLeidoLocal(articulo.enlace);
@@ -617,6 +638,9 @@ async function abrirModoLectura(enlace, forzar = false, direccion = null) {
     } else {
       articulosModoLectura = articulosCache.filter((a) => a.categoria === categoriaActiva);
     }
+    // Los PDFs (externo) no se pueden leer aquí — sin esto, Anterior/Siguiente
+    // y la barra lateral intentarían abrirlos en modo lectura y fallarían.
+    articulosModoLectura = articulosModoLectura.filter((a) => !a.externo);
 
     scrollPrincipalGuardado = window.scrollY;
 
@@ -937,6 +961,10 @@ async function pintarGuardados() {
 
     div.addEventListener('click', async (evento) => {
       if (evento.target.closest('.boton-eliminar-guardado')) return;
+      if (item.externo) {
+        window.api.abrirExterno(item.enlace);
+        return;
+      }
       await cerrarCapaModal('capa-guardados', 'contenido-guardados');
       abrirModoLectura(item.enlace);
     });

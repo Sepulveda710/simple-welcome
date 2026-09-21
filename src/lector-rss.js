@@ -3,11 +3,15 @@
 // Contrato de salida (esto es lo importante para que nada se rompa):
 //   { titulo, fuente, categoria, fecha, enlace, imagen, colorFuente }
 //   "imagen" y "colorFuente" pueden ser null si esa fuente no los trae/define.
+//   Campos opcionales, solo de fuentes que no son RSS normal (ver fuente-profeco.js):
+//   "detalle" (texto extra junto a la fuente) y "externo: true" (el enlace
+//   es un PDF u otro archivo que se abre fuera de la app, no en modo lectura).
 //
 // Si agregas o quitas una fuente en config/fuentes.json, este módulo no necesita cambios.
 
 const Parser = require('rss-parser');
 const { obtenerFuentes } = require('./gestion-fuentes');
+const { esFuenteProfeco, leerRevistaProfeco } = require('./fuente-profeco');
 
 // Tiempo límite: si un feed no responde en 8 segundos, se da por fallido
 // y se sigue con los demás — sin esto, un solo sitio lento podía dejar
@@ -71,6 +75,8 @@ function normalizarArticulo(item, fuente) {
 // Lee UNA fuente. Si falla, no lanza el error hacia arriba — lo captura aquí
 // mismo y devuelve una lista vacía, para que las demás fuentes no se vean afectadas.
 async function leerFuente(fuente, limite) {
+  if (esFuenteProfeco(fuente.url)) return leerRevistaProfeco(fuente, limite);
+
   try {
     const feed = await parser.parseURL(fuente.url);
     return feed.items.slice(0, limite).map((item) => normalizarArticulo(item, fuente));
