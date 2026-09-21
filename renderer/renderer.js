@@ -601,7 +601,7 @@ async function abrirModoLectura(enlace, forzar = false, direccion = null) {
 
   // Cambiar de artículo corta la lectura en voz alta del anterior (si el
   // cambio lo provocó la propia lectura al terminar, ya estaba detenida).
-  LectorVoz.detener();
+  LectorVoz.cerrar();
   articuloListoParaVoz = false;
 
   // Si ya estábamos en modo lectura (viniendo de Anterior/Siguiente o de
@@ -728,7 +728,7 @@ function actualizarBotonesNavegacion(enlaceAbierto) {
 }
 
 async function cerrarModoLectura() {
-  LectorVoz.detener();
+  LectorVoz.cerrar();
   const panel = document.getElementById('modo-lectura');
   const saludoEl = document.getElementById('saludo');
   const filaEl = document.getElementById('fila-principal');
@@ -765,7 +765,8 @@ document.getElementById('cerrar-lectura').addEventListener('click', cerrarModoLe
 // --- Lectura en voz alta (el motor y el "lector" viven en lector-voz.js;
 // aquí solo se conecta con la pantalla) ---
 
-const VELOCIDADES_VOZ = [0.8, 1, 1.25, 1.5, 1.75, 2];
+// "1×" es la velocidad normal de la app (ver VELOCIDAD_NORMAL en lector-voz.js)
+const VELOCIDADES_VOZ = [0.5, 0.75, 1, 1.25, 1.5];
 let articuloListoParaVoz = false; // true solo cuando el artículo abierto cargó bien (no el mensaje de error)
 let velocidadVoz = 1;
 let bloqueResaltado = null;
@@ -788,20 +789,24 @@ function mostrarBloqueSiHaceFalta(el) {
 
 LectorVoz.alCambiar(({ estado, indice, total, bloque }) => {
   const activo = estado !== 'inactivo';
+  // Solo se resalta el párrafo mientras se lee o está en pausa; detenido
+  // ya no tiene un párrafo "en curso".
+  const conParrafo = estado === 'leyendo' || estado === 'pausado';
   document.getElementById('reproductor-voz').classList.toggle('oculto', !activo);
   document.getElementById('lectura-contenido').classList.toggle('con-reproductor', activo);
 
   const botonEscuchar = document.getElementById('escuchar-articulo');
   botonEscuchar.classList.toggle('escuchando', activo);
-  botonEscuchar.title = activo ? 'Detener la lectura' : 'Escuchar este artículo';
+  botonEscuchar.title = activo ? 'Cerrar el reproductor' : 'Escuchar este artículo';
 
-  const pausado = estado === 'pausado';
-  document.getElementById('icono-voz-pausa').textContent = pausado ? '' : '';
-  document.getElementById('voz-pausa').title = pausado ? 'Continuar' : 'Pausar';
-  document.getElementById('voz-progreso').textContent = activo ? `${indice + 1} de ${total}` : '';
+  // El botón central muestra ▶ cuando no está sonando (pausa o detenido).
+  const mostrarPlay = estado === 'pausado' || estado === 'detenido';
+  document.getElementById('icono-voz-pausa').textContent = mostrarPlay ? '\uE768' : '\uE769';
+  document.getElementById('voz-pausa').title = estado === 'pausado' ? 'Continuar' : estado === 'detenido' ? 'Reproducir desde el inicio' : 'Pausar';
+  document.getElementById('voz-progreso').textContent = conParrafo ? `${indice + 1} de ${total}` : (activo ? 'Detenido' : '');
 
   if (bloqueResaltado) bloqueResaltado.classList.remove('leyendo-ahora');
-  bloqueResaltado = activo && bloque?.el ? bloque.el : null;
+  bloqueResaltado = conParrafo && bloque?.el ? bloque.el : null;
   if (bloqueResaltado) {
     bloqueResaltado.classList.add('leyendo-ahora');
     mostrarBloqueSiHaceFalta(bloqueResaltado);
@@ -829,10 +834,11 @@ LectorVoz.alTerminarArticulo(async () => {
 
 document.getElementById('escuchar-articulo').addEventListener('click', () => {
   if (LectorVoz.estado === 'inactivo') iniciarLecturaEnVoz();
-  else LectorVoz.detener();
+  else LectorVoz.cerrar(); // con el reproductor abierto (aunque esté detenido), 🔊 lo cierra
 });
 document.getElementById('voz-pausa').addEventListener('click', () => LectorVoz.alternarPausa());
-document.getElementById('voz-detener').addEventListener('click', () => LectorVoz.detener());
+document.getElementById('voz-detener').addEventListener('click', () => LectorVoz.parar());
+document.getElementById('voz-cerrar').addEventListener('click', () => LectorVoz.cerrar());
 document.getElementById('voz-anterior').addEventListener('click', () => LectorVoz.saltar(-1));
 document.getElementById('voz-siguiente').addEventListener('click', () => LectorVoz.saltar(1));
 document.getElementById('voz-velocidad').addEventListener('click', (evento) => {
@@ -865,7 +871,7 @@ function poblarSelectorVoces(vozElegida) {
 }
 
 document.getElementById('probar-voz').addEventListener('click', () => {
-  LectorVoz.detener(); // si hay una lectura en marcha, se corta para que se oiga solo la muestra
+  LectorVoz.cerrar(); // si hay una lectura en marcha, se corta para que se oiga solo la muestra
   MotorVozWindows.hablar('Hola, soy tu lector de noticias. Así sueno con esta voz y esta velocidad.', {
     vozNombre: document.getElementById('input-voz-nombre').value,
     velocidad: Number(document.getElementById('input-voz-velocidad').value),

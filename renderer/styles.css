@@ -732,6 +732,10 @@ h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.2px; }
   border-radius: 999px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
+/* .oculto (display: none) es más débil que el display: flex de arriba y de
+   .boton-nav — sin esto la clase se agrega pero el elemento sigue visible. */
+.reproductor-voz.oculto,
+.boton-nav.oculto { display: none; }
 .reproductor-voz .boton-nav { border-radius: 999px; min-width: 32px; justify-content: center; }
 .reproductor-voz .boton-voz-principal {
   color: var(--accent-texto);

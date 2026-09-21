@@ -28,6 +28,13 @@ const MotorVozWindows = {
       .sort((a, b) => Number(b.lang === 'es-MX') - Number(a.lang === 'es-MX'));
   },
 
+  // Lo que en la app se llama "1× (normal)" equivale a 1.5 en la escala del
+  // motor de Windows: su 1.0 real suena muy lento para escuchar noticias
+  // (decisión de diseño, pedida por Abel tras probarlo). Vive aquí y no en
+  // la interfaz porque "normal" depende de cada voz/motor — Piper, por
+  // ejemplo, tendrá su propia calibración.
+  VELOCIDAD_NORMAL: 1.5,
+
   hablar(texto, { vozNombre, velocidad, alTerminar, alError }) {
     const enunciado = new SpeechSynthesisUtterance(texto);
     const espanolas = this.vocesEnEspanol();
@@ -36,7 +43,7 @@ const MotorVozWindows = {
     const voz = espanolas.find((v) => v.name === vozNombre) || espanolas[0];
     if (voz) enunciado.voice = voz;
     enunciado.lang = voz ? voz.lang : 'es-MX';
-    enunciado.rate = velocidad;
+    enunciado.rate = velocidad * this.VELOCIDAD_NORMAL;
     enunciado.onend = alTerminar;
     enunciado.onerror = alError;
     this._enunciadoActual = enunciado;
@@ -78,7 +85,9 @@ const LectorVoz = (() => {
 
   let bloques = [];
   let indice = 0;
-  let estado = 'inactivo'; // 'inactivo' | 'leyendo' | 'pausado'
+  // 'inactivo' (sin reproductor) | 'leyendo' | 'pausado' | 'detenido'
+  // (reproductor visible, voz parada y de vuelta al inicio, listo para ▶)
+  let estado = 'inactivo';
   // Cada vez que se cancela o se salta, sube este número. Los avisos del
   // motor (onend/onerror) de un enunciado viejo llegan tarde y se ignoran
   // comparando su número — sin esto, cancelar un párrafo dispararía "ya
@@ -109,7 +118,7 @@ const LectorVoz = (() => {
       alError: () => {
         if (gen !== generacion) return;
         erroresSeguidos += 1;
-        if (erroresSeguidos >= MAX_ERRORES_SEGUIDOS) detener();
+        if (erroresSeguidos >= MAX_ERRORES_SEGUIDOS) cerrar();
         else avanzar();
       }
     });
@@ -120,12 +129,24 @@ const LectorVoz = (() => {
       indice += 1;
       hablarActual();
     } else {
-      detener();
+      cerrar();
       alTerminarArticulo();
     }
   }
 
-  function detener() {
+  // Para la voz y vuelve al inicio, pero deja el reproductor visible.
+  function parar() {
+    if (estado === 'inactivo') return;
+    generacion += 1;
+    motor.detener();
+    estado = 'detenido';
+    indice = 0;
+    erroresSeguidos = 0;
+    avisar();
+  }
+
+  // Para la voz y quita el reproductor (olvida el artículo).
+  function cerrar() {
     generacion += 1;
     motor.detener();
     estado = 'inactivo';
@@ -147,7 +168,7 @@ const LectorVoz = (() => {
 
   return {
     iniciar(nuevosBloques) {
-      detener();
+      cerrar();
       if (!nuevosBloques.length) return;
       bloques = nuevosBloques;
       estado = 'leyendo';
@@ -163,6 +184,8 @@ const LectorVoz = (() => {
         motor.reanudar();
         estado = 'leyendo';
         avisar();
+      } else if (estado === 'detenido') {
+        reiniciarEn(0); // ▶ tras Detener: empieza de nuevo desde el título
       }
     },
 
@@ -173,14 +196,15 @@ const LectorVoz = (() => {
       reiniciarEn(destino);
     },
 
-    detener,
+    parar,
+    cerrar,
 
     fijarOpciones(nuevas) {
       const cambio = nuevas.vozNombre !== opciones.vozNombre || nuevas.velocidad !== opciones.velocidad;
       opciones = { ...opciones, ...nuevas };
       // Si estaba leyendo, el cambio se nota al instante en vez de esperar
-      // al siguiente párrafo.
-      if (cambio && estado !== 'inactivo') reiniciarEn(indice);
+      // al siguiente párrafo. Detenido no habla, así que no se reinicia.
+      if (cambio && (estado === 'leyendo' || estado === 'pausado')) reiniciarEn(indice);
     },
 
     alCambiar(funcion) { alCambiar = funcion; },
