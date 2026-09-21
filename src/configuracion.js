@@ -29,6 +29,9 @@ const VALORES_POR_DEFECTO = {
   unidadTemperatura: 'celsius', // 'celsius' | 'fahrenheit' — ver clima.js
   caraChiaPredeterminada: 'relajado', // id de EXPRESIONES_CHIA — la cara "de reposo" (los estados contextuales como "triste" la siguen pisando temporalmente)
   iniciarConWindows: true, // abrir la app sola al iniciar sesión en Windows — ver aplicarInicioConWindows en main.js (solo aplica en la versión instalada)
+  vozNombre: '', // nombre exacto de la voz de Windows para leer noticias ('' = la primera en español) — ver renderer/lector-voz.js
+  vozVelocidad: 1, // 0.8 a 2 — velocidad de la lectura en voz alta
+  vozSiguienteAuto: false, // al terminar una noticia en voz alta, seguir con la siguiente de la lista
   mostrarSaludoInicio: true // splash de bienvenida al arrancar (ver src/splash-estado.js) — apagar esto lo salta sin importar si hoy ya tocaba o no
 };
 

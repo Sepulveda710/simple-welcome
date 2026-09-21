@@ -129,6 +129,7 @@
             <button id="articulo-anterior" class="boton-nav"><i class="icono-fluent" aria-hidden="true">&#xE76B;</i> Anterior</button>
             <button id="articulo-siguiente" class="boton-nav">Siguiente <i class="icono-fluent" aria-hidden="true">&#xE76C;</i></button>
             <button id="actualizar-articulo" class="boton-nav" title="Volver a intentar cargar este artículo"><i class="icono-fluent" aria-hidden="true">&#xE72C;</i></button>
+            <button id="escuchar-articulo" class="boton-nav" title="Escuchar este artículo"><i class="icono-fluent" aria-hidden="true">&#xE767;</i></button>
             <button id="guardar-articulo" class="boton-nav" title="Guardar para después"><i class="icono-fluent" aria-hidden="true">&#xE734;</i></button>
             <button id="compartir-articulo" class="boton-nav" title="Copiar enlace"><i class="icono-fluent" aria-hidden="true">&#xE72D;</i></button>
             <button id="alternar-calido" class="boton-nav" title="Modo cálido de lectura"><i class="icono-fluent" aria-hidden="true">&#xE706;</i></button>
@@ -139,6 +140,19 @@
       </div>
       <div class="area-scroll" id="area-scroll">
         <div id="lectura-contenido" class="contenido-articulo"></div>
+      </div>
+
+      <!-- Reproductor de la lectura en voz alta (ver lector-voz.js). Va
+           dentro del panel pero fuera de .area-scroll para quedarse fijo
+           abajo mientras el artículo se desplaza. -->
+      <div id="reproductor-voz" class="reproductor-voz oculto" role="region" aria-label="Lectura en voz alta">
+        <button id="voz-anterior" class="boton-nav" title="Párrafo anterior"><i class="icono-fluent" aria-hidden="true">&#xE892;</i></button>
+        <button id="voz-pausa" class="boton-nav boton-voz-principal" title="Pausar"><i class="icono-fluent" id="icono-voz-pausa" aria-hidden="true">&#xE769;</i></button>
+        <button id="voz-siguiente" class="boton-nav" title="Párrafo siguiente"><i class="icono-fluent" aria-hidden="true">&#xE893;</i></button>
+        <button id="voz-velocidad" class="boton-nav" title="Velocidad de lectura">1×</button>
+        <span id="voz-progreso" class="voz-progreso"></span>
+        <button id="voz-detener" class="boton-nav" title="Detener (vuelve al inicio)"><i class="icono-fluent" aria-hidden="true">&#xE71A;</i></button>
+        <button id="voz-cerrar" class="boton-nav" title="Cerrar el reproductor"><i class="icono-fluent" aria-hidden="true">&#xE711;</i></button>
       </div>
     </div>
 
@@ -169,6 +183,7 @@
         <button type="button" class="item-menu-configuracion" data-seccion="apariencia"><span class="icono-menu-configuracion">🎨</span> Apariencia</button>
         <button type="button" class="item-menu-configuracion" data-seccion="fuentes"><span class="icono-menu-configuracion">📰</span> Fuentes</button>
         <button type="button" class="item-menu-configuracion" data-seccion="chia"><span class="icono-menu-configuracion cara-chia">^-^</span> Chía</button>
+        <button type="button" class="item-menu-configuracion" data-seccion="voz"><span class="icono-menu-configuracion">🔊</span> Lectura en voz</button>
         <button type="button" class="item-menu-configuracion" data-seccion="inicio"><span class="icono-menu-configuracion">☕</span> Inicio</button>
         <button type="button" class="item-menu-configuracion" data-seccion="comentarios"><span class="icono-menu-configuracion">💬</span> Comentarios</button>
         <button type="button" class="item-menu-configuracion" data-seccion="acerca"><span class="icono-menu-configuracion">ⓘ</span> Acerca de</button>
@@ -274,6 +289,44 @@
             <span>Cara predeterminada</span>
             <div id="selector-caras-chia" class="selector-caras-chia"></div>
           </div>
+        </section>
+
+        <section class="seccion-configuracion oculto" data-seccion="voz">
+          <h3 class="titulo-seccion-configuracion">Lectura en voz alta</h3>
+          <p class="ayuda-comentarios">
+            En el modo lectura, el botón 🔊 te lee la noticia mientras haces otra
+            cosa. Usa las voces que ya trae tu Windows, sin internet.
+          </p>
+
+          <div class="fila-configuracion">
+            <label class="campo-configuracion">
+              <span>Voz</span>
+              <select id="input-voz-nombre"></select>
+            </label>
+            <label class="campo-configuracion">
+              <span>Velocidad</span>
+              <select id="input-voz-velocidad">
+                <option value="0.5">0.5× (lenta)</option>
+                <option value="0.75">0.75×</option>
+                <option value="1">1× (normal)</option>
+                <option value="1.25">1.25×</option>
+                <option value="1.5">1.5× (rápida)</option>
+              </select>
+            </label>
+          </div>
+          <p id="aviso-voces" class="aviso-campo error oculto">
+            Tu Windows no tiene voces en español instaladas. Puedes agregarlas en
+            Configuración de Windows &gt; Hora e idioma &gt; Voz.
+          </p>
+
+          <div class="acciones-configuracion">
+            <button id="probar-voz" class="boton-nav" type="button">▶ Probar voz</button>
+          </div>
+
+          <label class="campo-configuracion campo-interruptor">
+            <span>Seguir con la siguiente noticia <small>(al terminar una, lee la que sigue en la lista, y la marca como leída)</small></span>
+            <span class="interruptor"><input type="checkbox" id="input-voz-siguiente-auto" /><span class="interruptor-riel"></span></span>
+          </label>
         </section>
 
         <section class="seccion-configuracion oculto" data-seccion="inicio">
@@ -411,6 +464,7 @@
 <button id="boton-cerrar-panel-ia" class="boton-cerrar-panel-ia" title="Cerrar búsqueda">✕</button>
 
   <script src="expresiones-chia.js"></script>
+  <script src="lector-voz.js"></script>
   <script src="renderer.js"></script>
 </body>
 </html>
