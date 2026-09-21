@@ -850,6 +850,30 @@ if ('speechSynthesis' in window) {
 }
 
 let vozSiguienteAuto = false;
+// Llena el selector de Configuración con las voces en español del sistema.
+// "Automática" = la primera (es-MX si hay). Se rellena cada vez que se abre
+// Configuración por si las voces terminaron de cargar después del arranque.
+function poblarSelectorVoces(vozElegida) {
+  const selector = document.getElementById('input-voz-nombre');
+  const espanolas = MotorVozWindows.vocesEnEspanol();
+  selector.innerHTML = '';
+  selector.add(new Option('Automática', ''));
+  espanolas.forEach((voz) => selector.add(new Option(`${voz.name}`, voz.name)));
+  selector.value = espanolas.some((v) => v.name === vozElegida) ? vozElegida : '';
+  document.getElementById('aviso-voces').classList.toggle('oculto', espanolas.length > 0);
+  document.getElementById('probar-voz').disabled = !('speechSynthesis' in window);
+}
+
+document.getElementById('probar-voz').addEventListener('click', () => {
+  LectorVoz.detener(); // si hay una lectura en marcha, se corta para que se oiga solo la muestra
+  MotorVozWindows.hablar('Hola, soy tu lector de noticias. Así sueno con esta voz y esta velocidad.', {
+    vozNombre: document.getElementById('input-voz-nombre').value,
+    velocidad: Number(document.getElementById('input-voz-velocidad').value),
+    alTerminar: () => {},
+    alError: () => {}
+  });
+});
+
 function aplicarOpcionesVoz(config) {
   velocidadVoz = VELOCIDADES_VOZ.includes(config.vozVelocidad) ? config.vozVelocidad : 1;
   vozSiguienteAuto = Boolean(config.vozSiguienteAuto);
@@ -1519,6 +1543,9 @@ function poblarFormularioConfiguracion(config) {
   document.getElementById('input-unidad-temperatura').value = config.unidadTemperatura || 'celsius';
   document.getElementById('input-formato-hora').value = config.formato24h ? '24' : '12';
   document.getElementById('input-iniciar-con-windows').checked = config.iniciarConWindows !== false;
+  poblarSelectorVoces(config.vozNombre);
+  document.getElementById('input-voz-velocidad').value = String(config.vozVelocidad ?? 1);
+  document.getElementById('input-voz-siguiente-auto').checked = Boolean(config.vozSiguienteAuto);
   pintarSelectorCarasChia(config.caraChiaPredeterminada || 'relajado');
 }
 
@@ -1595,7 +1622,10 @@ const CAMPOS_CONFIGURACION = {
   'input-noticias-pagina': (el) => ({ noticiasPorPagina: Number(el.value) }),
   'input-unidad-temperatura': (el) => ({ unidadTemperatura: el.value }),
   'input-formato-hora': (el) => ({ formato24h: el.value === '24' }),
-  'input-iniciar-con-windows': (el) => ({ iniciarConWindows: el.checked })
+  'input-iniciar-con-windows': (el) => ({ iniciarConWindows: el.checked }),
+  'input-voz-nombre': (el) => ({ vozNombre: el.value }),
+  'input-voz-velocidad': (el) => ({ vozVelocidad: Number(el.value) }),
+  'input-voz-siguiente-auto': (el) => ({ vozSiguienteAuto: el.checked })
 };
 
 Object.entries(CAMPOS_CONFIGURACION).forEach(([id, aCambios]) => {

@@ -641,6 +641,8 @@ sugerencias de categoría (`<datalist>`), Enter guarda.
      (`URL_FORMULARIO_COMENTARIOS` en `renderer.js` = https://tally.so/r/A7k5Ye;
      si está vacía, el botón se oculta). Las respuestas le llegan a su
      correo. Nada se envía desde la app.
+**[HECHO en la rama `lector-voz`, sin publicar aún] Los pendientes 4 y 7 (lector de voz), primera etapa con voces de Windows:** `renderer/lector-voz.js` tiene dos capas — `MotorVozWindows` (speechSynthesis; solo sabe hablar un texto) y `LectorVoz` (párrafo actual, avanzar, pausa, saltar, sin tocar el DOM; avisa por callback). Para cambiar a Piper u otro motor solo se reemplaza el motor. Botón 🔊 en el modo lectura + reproductor flotante (pausa/continuar, párrafo anterior/siguiente, velocidad, detener) + párrafo resaltado. Configuración > Lectura en voz: voz, velocidad, probar voz y "seguir con la siguiente noticia" (`vozNombre`, `vozVelocidad`, `vozSiguienteAuto` en `configuracion.js`). Gotchas: las voces cargan tarde (la 1ª consulta a `getVoices()` sale vacía — se piden desde el arranque); un enunciado cancelado avisa `onend/onerror` tarde, por eso el contador `generacion`; Chromium puede recolectar el enunciado a media frase si no se guarda la referencia. Probado por código con volumen 0 (pausa, saltos, velocidad, detener, auto-siguiente, cortar al cerrar); la captura visual de Configuración > Lectura en voz no se pudo (capturePage devolvió cuadros viejos). Piper (voz más natural) sigue pendiente.
+
 7. **Lector de voz — plan acordado**: empezar con las voces de Windows
    (`speechSynthesis`, gratis, sin dependencias) y después probar Piper
    (offline, más natural). Abel quiere algo sencillo que suene bien, no
