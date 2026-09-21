@@ -31,7 +31,7 @@ seguir la serie de Y (5.3). Regla real:
   acumulación tan grande que Y ya se sentiría absurdo (¿5.19?). Ante la
   duda, es Y — Abel prefiere corregir un X de más rebajándolo que ver la
   beta subir de número principal seguido.
-- Estamos en **Beta 5.7** al momento de escribir esto (4.0 → 4.1: separar
+- Estamos en **Beta 5.9** al momento de escribir esto (4.0 → 4.1: separar
   el tema claro/oscuro del modo cálido de lectura, que antes compartían la
   misma variable — ver "Decisiones técnicas importantes" abajo. 4.1 → 4.2:
   mejoras a la barra lateral del modo lectura. 4.2 → 5.0: portada del
@@ -47,7 +47,10 @@ seguir la serie de Y (5.3). Regla real:
   captura de Abel lo confirmó) — se quitó por completo, ver "Estado
   actual" al final de este archivo antes de tocar nada relacionado.
   5.6 → 5.7: la app quedó lista para empaquetarse e instalarse de verdad,
-  con actualización automática — ver "Estado actual").
+  con actualización automática. 5.7 → 5.8: inicio con Windows + el "por
+  qué" de la app. 5.8 → 5.9: instalador nítido en pantallas de alta
+  resolución, caja de comentarios y Configuración rediseñada estilo
+  Windows 11 con edición de fuentes — ver "Estado actual").
 
 ## Cómo le gusta trabajar a Abel (el usuario)
 
