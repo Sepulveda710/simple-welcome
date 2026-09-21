@@ -129,6 +129,7 @@
             <button id="articulo-anterior" class="boton-nav"><i class="icono-fluent" aria-hidden="true">&#xE76B;</i> Anterior</button>
             <button id="articulo-siguiente" class="boton-nav">Siguiente <i class="icono-fluent" aria-hidden="true">&#xE76C;</i></button>
             <button id="actualizar-articulo" class="boton-nav" title="Volver a intentar cargar este artículo"><i class="icono-fluent" aria-hidden="true">&#xE72C;</i></button>
+            <button id="escuchar-articulo" class="boton-nav" title="Escuchar este artículo"><i class="icono-fluent" aria-hidden="true">&#xE767;</i></button>
             <button id="guardar-articulo" class="boton-nav" title="Guardar para después"><i class="icono-fluent" aria-hidden="true">&#xE734;</i></button>
             <button id="compartir-articulo" class="boton-nav" title="Copiar enlace"><i class="icono-fluent" aria-hidden="true">&#xE72D;</i></button>
             <button id="alternar-calido" class="boton-nav" title="Modo cálido de lectura"><i class="icono-fluent" aria-hidden="true">&#xE706;</i></button>
@@ -139,6 +140,18 @@
       </div>
       <div class="area-scroll" id="area-scroll">
         <div id="lectura-contenido" class="contenido-articulo"></div>
+      </div>
+
+      <!-- Reproductor de la lectura en voz alta (ver lector-voz.js). Va
+           dentro del panel pero fuera de .area-scroll para quedarse fijo
+           abajo mientras el artículo se desplaza. -->
+      <div id="reproductor-voz" class="reproductor-voz oculto" role="region" aria-label="Lectura en voz alta">
+        <button id="voz-anterior" class="boton-nav" title="Párrafo anterior"><i class="icono-fluent" aria-hidden="true">&#xE892;</i></button>
+        <button id="voz-pausa" class="boton-nav boton-voz-principal" title="Pausar"><i class="icono-fluent" id="icono-voz-pausa" aria-hidden="true">&#xE769;</i></button>
+        <button id="voz-siguiente" class="boton-nav" title="Párrafo siguiente"><i class="icono-fluent" aria-hidden="true">&#xE893;</i></button>
+        <button id="voz-velocidad" class="boton-nav" title="Velocidad de lectura">1×</button>
+        <span id="voz-progreso" class="voz-progreso"></span>
+        <button id="voz-detener" class="boton-nav" title="Detener la lectura"><i class="icono-fluent" aria-hidden="true">&#xE71A;</i></button>
       </div>
     </div>
 
@@ -411,6 +424,7 @@
 <button id="boton-cerrar-panel-ia" class="boton-cerrar-panel-ia" title="Cerrar búsqueda">✕</button>
 
   <script src="expresiones-chia.js"></script>
+  <script src="lector-voz.js"></script>
   <script src="renderer.js"></script>
 </body>
 </html>

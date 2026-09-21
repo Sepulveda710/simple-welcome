@@ -599,6 +599,11 @@ async function abrirModoLectura(enlace, forzar = false, direccion = null) {
   enlaceActual = enlace;
   actualizarBotonGuardarArticulo();
 
+  // Cambiar de artículo corta la lectura en voz alta del anterior (si el
+  // cambio lo provocó la propia lectura al terminar, ya estaba detenida).
+  LectorVoz.detener();
+  articuloListoParaVoz = false;
+
   // Si ya estábamos en modo lectura (viniendo de Anterior/Siguiente o de
   // la barra lateral), no repetimos la transición de entrada — esa ya
   // pasó una vez y aquí solo cambia el contenido del artículo.
@@ -677,6 +682,7 @@ async function abrirModoLectura(enlace, forzar = false, direccion = null) {
     contenido.innerHTML = articulo.textoHtml;
     insertarPortadaArticulo(contenido, datosFeed?.imagen);
     aplicarTinteArticulo(colorDominante);
+    articuloListoParaVoz = true;
 
     // Elige la animación según cómo se llegó aquí: Anterior/Siguiente
     // deslizan en su dirección; abrir desde la lista o la barra lateral
@@ -722,6 +728,7 @@ function actualizarBotonesNavegacion(enlaceAbierto) {
 }
 
 async function cerrarModoLectura() {
+  LectorVoz.detener();
   const panel = document.getElementById('modo-lectura');
   const saludoEl = document.getElementById('saludo');
   const filaEl = document.getElementById('fila-principal');
@@ -754,6 +761,101 @@ async function cerrarModoLectura() {
 }
 
 document.getElementById('cerrar-lectura').addEventListener('click', cerrarModoLectura);
+
+// --- Lectura en voz alta (el motor y el "lector" viven en lector-voz.js;
+// aquí solo se conecta con la pantalla) ---
+
+const VELOCIDADES_VOZ = [0.8, 1, 1.25, 1.5, 1.75, 2];
+let articuloListoParaVoz = false; // true solo cuando el artículo abierto cargó bien (no el mensaje de error)
+let velocidadVoz = 1;
+let bloqueResaltado = null;
+
+function etiquetaVelocidad(velocidad) {
+  return `${velocidad}×`;
+}
+
+// Si el bloque que se está leyendo queda fuera de la vista (o tapado por el
+// encabezado o el reproductor), se desplaza hasta centrarlo. Si ya se ve,
+// no se mueve nada — así no se pelea con quien esté haciendo scroll a mano.
+function mostrarBloqueSiHaceFalta(el) {
+  const zona = document.getElementById('area-scroll').getBoundingClientRect();
+  const caja = el.getBoundingClientRect();
+  const altoEncabezado = document.getElementById('encabezado-articulo').offsetHeight;
+  if (caja.top < zona.top + altoEncabezado || caja.bottom > zona.bottom - 70) {
+    el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+}
+
+LectorVoz.alCambiar(({ estado, indice, total, bloque }) => {
+  const activo = estado !== 'inactivo';
+  document.getElementById('reproductor-voz').classList.toggle('oculto', !activo);
+  document.getElementById('lectura-contenido').classList.toggle('con-reproductor', activo);
+
+  const botonEscuchar = document.getElementById('escuchar-articulo');
+  botonEscuchar.classList.toggle('escuchando', activo);
+  botonEscuchar.title = activo ? 'Detener la lectura' : 'Escuchar este artículo';
+
+  const pausado = estado === 'pausado';
+  document.getElementById('icono-voz-pausa').textContent = pausado ? '' : '';
+  document.getElementById('voz-pausa').title = pausado ? 'Continuar' : 'Pausar';
+  document.getElementById('voz-progreso').textContent = activo ? `${indice + 1} de ${total}` : '';
+
+  if (bloqueResaltado) bloqueResaltado.classList.remove('leyendo-ahora');
+  bloqueResaltado = activo && bloque?.el ? bloque.el : null;
+  if (bloqueResaltado) {
+    bloqueResaltado.classList.add('leyendo-ahora');
+    mostrarBloqueSiHaceFalta(bloqueResaltado);
+  }
+});
+
+function iniciarLecturaEnVoz() {
+  if (!articuloListoParaVoz) return;
+  LectorVoz.iniciar(bloquesLegibles(
+    document.getElementById('lectura-titulo'),
+    document.getElementById('lectura-contenido')
+  ));
+}
+
+// Al terminar el artículo, si Abel lo activó, sigue con el siguiente de la
+// lista (la misma que usan Anterior/Siguiente). Abrirlo lo marca como leído.
+LectorVoz.alTerminarArticulo(async () => {
+  if (!vozSiguienteAuto) return;
+  const indice = articulosModoLectura.findIndex((a) => a.enlace === enlaceActual);
+  const siguiente = articulosModoLectura[indice + 1];
+  if (indice === -1 || !siguiente) return;
+  await abrirModoLectura(siguiente.enlace, false, 'siguiente');
+  iniciarLecturaEnVoz();
+});
+
+document.getElementById('escuchar-articulo').addEventListener('click', () => {
+  if (LectorVoz.estado === 'inactivo') iniciarLecturaEnVoz();
+  else LectorVoz.detener();
+});
+document.getElementById('voz-pausa').addEventListener('click', () => LectorVoz.alternarPausa());
+document.getElementById('voz-detener').addEventListener('click', () => LectorVoz.detener());
+document.getElementById('voz-anterior').addEventListener('click', () => LectorVoz.saltar(-1));
+document.getElementById('voz-siguiente').addEventListener('click', () => LectorVoz.saltar(1));
+document.getElementById('voz-velocidad').addEventListener('click', (evento) => {
+  const posicion = VELOCIDADES_VOZ.indexOf(velocidadVoz);
+  const nueva = VELOCIDADES_VOZ[(posicion + 1) % VELOCIDADES_VOZ.length];
+  guardarCampoConfiguracion({ vozVelocidad: nueva }, origenDe(evento.currentTarget));
+});
+
+// Las voces de Windows cargan con retraso (la primera consulta suele salir
+// vacía); pedirlas desde el arranque hace que ya estén cuando se pulsa 🔊.
+if ('speechSynthesis' in window) {
+  window.speechSynthesis.getVoices();
+} else {
+  document.getElementById('escuchar-articulo').classList.add('oculto');
+}
+
+let vozSiguienteAuto = false;
+function aplicarOpcionesVoz(config) {
+  velocidadVoz = VELOCIDADES_VOZ.includes(config.vozVelocidad) ? config.vozVelocidad : 1;
+  vozSiguienteAuto = Boolean(config.vozSiguienteAuto);
+  document.getElementById('voz-velocidad').textContent = etiquetaVelocidad(velocidadVoz);
+  LectorVoz.fijarOpciones({ vozNombre: config.vozNombre || '', velocidad: velocidadVoz });
+}
 
 // Botón explícito: abre el artículo actual en el navegador del sistema,
 // sin importar de qué sitio sea (útil si el modo lectura no extrajo bien el texto).
@@ -1432,6 +1534,7 @@ function aplicarConfigEnVivo(config, origen) {
   }
   document.getElementById('modo-lectura').classList.toggle('calido', Boolean(config.modoCalidoLectura));
   document.getElementById('alternar-calido').classList.toggle('guardado', Boolean(config.modoCalidoLectura));
+  aplicarOpcionesVoz(config);
 
   if (NOTICIAS_POR_PAGINA !== config.noticiasPorPagina) {
     NOTICIAS_POR_PAGINA = config.noticiasPorPagina;
@@ -1857,6 +1960,7 @@ async function iniciar() {
   actualizarIconoTema(config.tema || 'claro');
   document.getElementById('modo-lectura').classList.toggle('calido', Boolean(config.modoCalidoLectura));
   document.getElementById('alternar-calido').classList.toggle('guardado', Boolean(config.modoCalidoLectura));
+  aplicarOpcionesVoz(config);
 
   guardadosCache = await window.api.obtenerGuardados();
 
