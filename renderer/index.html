@@ -180,8 +180,11 @@
         <button id="voz-velocidad" class="boton-nav" title="Velocidad de lectura">1×</button>
         <span id="voz-progreso" class="voz-progreso"></span>
         <button id="voz-detener" class="boton-nav" title="Detener (vuelve al inicio)"><i class="icono-fluent" aria-hidden="true">&#xE71A;</i></button>
-        <button id="voz-cerrar" class="boton-nav" title="Cerrar el reproductor"><i class="icono-fluent" aria-hidden="true">&#xE711;</i></button>
       </div>
+      <!-- Aparte del resto (Abel lo pidió separado, no mezclado con los
+           demás íconos) — se oculta igual que todo lo demás porque cuelga
+           del mismo #companera-chia.oculto, no necesita su propio toggle. -->
+      <button id="voz-cerrar" class="boton-cerrar-companera-chia" title="Cerrar el reproductor" type="button"><i class="icono-fluent" aria-hidden="true">&#xE711;</i></button>
     </div>
 
     <!-- Fuera de .panel-articulo a propósito: ese panel tiene backdrop-filter
