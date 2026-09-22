@@ -775,9 +775,14 @@ h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.2px; }
    (títulos, listas, citas — el valor por defecto del navegador para esas
    etiquetas) escala junto con el texto normal, sin tener que repetir la
    variable en cada selector. --escala-lectura vive en #modo-lectura (no en
-   :root) porque es una preferencia de LECTURA, no de toda la app. */
+   :root) porque es una preferencia de LECTURA, no de toda la app.
+   17.6px (no 16px) es el tamaño base A PROPÓSITO: Abel probó el control
+   A-/A+ y decidió que lo que antes se veía como "110%" (16px × 1.1) es el
+   tamaño correcto para leer — ese valor pasó a ser el nuevo "100%"
+   (índice 0). El rango final, ya no de prueba, es 90%–130% de ESTE tamaño
+   (ver INDICE_TEXTO_MIN/MAX en renderer.js). */
 .contenido-articulo {
-  font-size: calc(16px * var(--escala-lectura, 1));
+  font-size: calc(17.6px * var(--escala-lectura, 1));
   line-height: 1.7;
   color: var(--texto);
   padding: 0 20px 20px; /* el padding-top lo agrega renderer.js según el alto real del encabezado */

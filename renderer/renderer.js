@@ -613,20 +613,19 @@ function aplicarTinteArticulo(colorHex) {
   }
 }
 
-// Tamaño del texto en modo lectura: "índice 0" es el tamaño base de
-// siempre (16px), y cada clic en A⁻/A⁺ suma o resta un paso. La escala real
-// (1 = 100%) se guarda en la variable CSS --escala-lectura, en #modo-lectura
-// (ver .contenido-articulo en styles.css) — así títulos, listas y citas, que
-// usan "em" por defecto del navegador, escalan junto con el texto sin tener
-// que tocarlos uno por uno.
+// Tamaño del texto en modo lectura: "índice 0" es el tamaño base (ver la
+// nota sobre 17.6px en .contenido-articulo, styles.css), y cada clic en
+// A⁻/A⁺ suma o resta un paso. La escala real (1 = 100%) se guarda en la
+// variable CSS --escala-lectura, en #modo-lectura — así títulos, listas y
+// citas, que usan "em" por defecto del navegador, escalan junto con el
+// texto sin tener que tocarlos uno por uno.
 //
-// LÍMITES TEMPORALES PARA PROBAR (pedido de Abel, 2026-09-21): un rango
-// amplio a propósito para que pruebe hasta dónde se ve bien en la práctica
-// y me diga el mínimo/máximo reales — cuando los tenga, achicar
-// INDICE_TEXTO_MIN/MAX aquí abajo a esos valores definitivos.
-const PASO_TEXTO = 0.1; // 10% por clic — un porcentaje redondo, fácil de seguir
-const INDICE_TEXTO_MIN = -8; // hoy: 20% — PROVISIONAL
-const INDICE_TEXTO_MAX = 8; // hoy: 180% — PROVISIONAL
+// LÍMITES DEFINITIVOS (decididos por Abel el 2026-09-21, tras probar un
+// rango amplio): 90% a 130% del tamaño base, en pasos de 10% — 5 tamaños
+// posibles en total (90/100/110/120/130).
+const PASO_TEXTO = 0.1;
+const INDICE_TEXTO_MIN = -1; // 90%
+const INDICE_TEXTO_MAX = 3; // 130%
 let indiceTamanoTexto = 0;
 
 function aplicarTamanoTexto(indice) {
