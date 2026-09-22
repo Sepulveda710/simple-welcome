@@ -706,6 +706,14 @@ h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.2px; }
   background: rgba(168, 115, 12, 0.1);
 }
 
+.control-tamano-texto { display: flex; gap: 2px; }
+.control-tamano-texto .boton-nav { padding-left: 8px; padding-right: 8px; }
+#indicador-tamano-texto {
+  font-variant-numeric: tabular-nums;
+  min-width: 44px;
+  justify-content: center;
+}
+
 /* Botón "escuchar" mientras hay una lectura en voz alta en marcha */
 .boton-nav.escuchando {
   color: var(--accent-texto);
@@ -762,8 +770,14 @@ h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.2px; }
   transition: background 0.2s ease;
 }
 
+/* Tamaño del texto del artículo (ver PASO_TEXTO en renderer.js): al fijar el
+   font-size AQUÍ, en el contenedor, todo lo de adentro que use unidades "em"
+   (títulos, listas, citas — el valor por defecto del navegador para esas
+   etiquetas) escala junto con el texto normal, sin tener que repetir la
+   variable en cada selector. --escala-lectura vive en #modo-lectura (no en
+   :root) porque es una preferencia de LECTURA, no de toda la app. */
 .contenido-articulo {
-  font-size: 16px;
+  font-size: calc(16px * var(--escala-lectura, 1));
   line-height: 1.7;
   color: var(--texto);
   padding: 0 20px 20px; /* el padding-top lo agrega renderer.js según el alto real del encabezado */

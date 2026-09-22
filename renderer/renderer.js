@@ -613,6 +613,45 @@ function aplicarTinteArticulo(colorHex) {
   }
 }
 
+// Tamaño del texto en modo lectura: "índice 0" es el tamaño base de
+// siempre (16px), y cada clic en A⁻/A⁺ suma o resta un paso. La escala real
+// (1 = 100%) se guarda en la variable CSS --escala-lectura, en #modo-lectura
+// (ver .contenido-articulo en styles.css) — así títulos, listas y citas, que
+// usan "em" por defecto del navegador, escalan junto con el texto sin tener
+// que tocarlos uno por uno.
+//
+// LÍMITES TEMPORALES PARA PROBAR (pedido de Abel, 2026-09-21): un rango
+// amplio a propósito para que pruebe hasta dónde se ve bien en la práctica
+// y me diga el mínimo/máximo reales — cuando los tenga, achicar
+// INDICE_TEXTO_MIN/MAX aquí abajo a esos valores definitivos.
+const PASO_TEXTO = 0.1; // 10% por clic — un porcentaje redondo, fácil de seguir
+const INDICE_TEXTO_MIN = -8; // hoy: 20% — PROVISIONAL
+const INDICE_TEXTO_MAX = 8; // hoy: 180% — PROVISIONAL
+let indiceTamanoTexto = 0;
+
+function aplicarTamanoTexto(indice) {
+  indiceTamanoTexto = Math.min(INDICE_TEXTO_MAX, Math.max(INDICE_TEXTO_MIN, indice));
+  const escala = 1 + indiceTamanoTexto * PASO_TEXTO;
+  document.getElementById('modo-lectura').style.setProperty('--escala-lectura', escala);
+  document.getElementById('indicador-tamano-texto').textContent = `${Math.round(escala * 100)}%`;
+  document.getElementById('texto-mas-chico').disabled = indiceTamanoTexto <= INDICE_TEXTO_MIN;
+  document.getElementById('texto-mas-grande').disabled = indiceTamanoTexto >= INDICE_TEXTO_MAX;
+}
+
+function cambiarTamanoTexto(delta) {
+  aplicarTamanoTexto(indiceTamanoTexto + delta);
+  window.api.guardarConfiguracion({ escalaTextoLectura: indiceTamanoTexto });
+}
+
+document.getElementById('texto-mas-chico').addEventListener('click', () => cambiarTamanoTexto(-1));
+document.getElementById('texto-mas-grande').addEventListener('click', () => cambiarTamanoTexto(1));
+// El propio indicador ("100%") resetea al tamaño base — así es fácil volver
+// a comparar contra el punto de partida mientras se prueba hasta dónde se ve bien.
+document.getElementById('indicador-tamano-texto').addEventListener('click', () => {
+  aplicarTamanoTexto(0);
+  window.api.guardarConfiguracion({ escalaTextoLectura: 0 });
+});
+
 async function abrirModoLectura(enlace, forzar = false, direccion = null) {
   const panel = document.getElementById('modo-lectura');
   const contenido = document.getElementById('lectura-contenido');
@@ -1596,6 +1635,7 @@ function aplicarConfigEnVivo(config, origen) {
   document.getElementById('modo-lectura').classList.toggle('calido', Boolean(config.modoCalidoLectura));
   document.getElementById('alternar-calido').classList.toggle('guardado', Boolean(config.modoCalidoLectura));
   aplicarOpcionesVoz(config);
+  aplicarTamanoTexto(config.escalaTextoLectura || 0);
 
   if (NOTICIAS_POR_PAGINA !== config.noticiasPorPagina) {
     NOTICIAS_POR_PAGINA = config.noticiasPorPagina;
@@ -2025,6 +2065,7 @@ async function iniciar() {
   document.getElementById('modo-lectura').classList.toggle('calido', Boolean(config.modoCalidoLectura));
   document.getElementById('alternar-calido').classList.toggle('guardado', Boolean(config.modoCalidoLectura));
   aplicarOpcionesVoz(config);
+  aplicarTamanoTexto(config.escalaTextoLectura || 0);
 
   guardadosCache = await window.api.obtenerGuardados();
 
