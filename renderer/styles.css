@@ -771,6 +771,33 @@ h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.2px; }
 .contenido-articulo img { max-width: 100%; height: auto; display: block; margin: 12px 0; border-radius: var(--radio); }
 .contenido-articulo a { color: var(--accent-texto); }
 
+/* Tablas de especificaciones (comparativas de producto, tablas de datos):
+   sin esto, el navegador las pinta con su estilo por defecto y, sobre todo,
+   cada <p> suelto que los medios meten dentro de una celda (una línea por
+   dato, ej. "Panel LED" / "SmartMenu" / "PrepIQ" cada uno en su <p>) hereda
+   el margen normal de párrafo — eso es lo que antes dejaba huecos enormes
+   entre filas. Aquí SÍ se pisa ese margen a propósito, solo dentro de la
+   tabla, para que las filas queden compactas como en el sitio original. */
+.contenido-articulo table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 15px;
+}
+.contenido-articulo th,
+.contenido-articulo td {
+  text-align: left;
+  vertical-align: top;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--borde);
+}
+.contenido-articulo th { background: var(--accent-fondo); color: var(--accent-texto); font-weight: 600; }
+.contenido-articulo tbody tr:nth-child(even) { background: rgba(0, 0, 0, 0.03); }
+.contenido-articulo th p,
+.contenido-articulo td p { margin: 0 0 4px; }
+.contenido-articulo th p:last-child,
+.contenido-articulo td p:last-child { margin-bottom: 0; }
+
 /* Portada del artículo: la miniatura del feed, siempre presente (no
    depende de si Readability la conservó dentro del texto — ver
    insertarPortadaArticulo en renderer.js). Más grande y con más aire que
