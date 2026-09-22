@@ -935,7 +935,53 @@ LectorVoz.alCambiar(({ estado, indice, total, bloque }) => {
     bloqueResaltado.classList.add('leyendo-ahora');
     mostrarBloqueSiHaceFalta(bloqueResaltado);
   }
+
+  // PRUEBA TEMPORAL: la boca de Chía se mueve mientras de verdad está
+  // sonando la voz, y se congela cerrada en pausa/detenido — no distingue
+  // sílabas, solo un ciclo simple (ver companeraChiaAlCambiarEstado abajo).
+  document.getElementById('modo-lectura').classList.toggle('leyendo', estado === 'leyendo');
+  companeraChiaAlCambiarEstado(estado === 'leyendo');
 });
+
+// --- PRUEBA TEMPORAL: 4 propuestas de "Chía habla" (ver el comentario
+// grande junto a #companera-chia-1 en index.html). Todo este bloque —
+// variables, funciones y sus usos arriba — se borra entero en cuanto Abel
+// elija una de las 4 variantes definitivas.
+const BOCAS_COMPANERA_CHIA = ['-', 'o', 'u', 'o']; // ciclo simple de "habla", no sincronizado a sílabas
+let indiceBocaCompaneraChia = 0;
+let temporizadorBocaCompaneraChia = null;
+
+// Arma "[ ojoIzq boca ojoDer ]" con los ojos de la cara elegida en
+// Configuración (para que la compañera combine con la carita del inicio)
+// y la boca que le toque en el ciclo.
+function marcoCompaneraChia(boca) {
+  const cara = EXPRESIONES_CHIA[caraChiaPredeterminada] || EXPRESIONES_CHIA.relajado;
+  const [, ojoIzq, , ojoDer] = cara.cara.split(' ');
+  return `[ ${ojoIzq} ${boca} ${ojoDer} ]`;
+}
+
+function pintarBocaCompaneraChia() {
+  const boca = BOCAS_COMPANERA_CHIA[indiceBocaCompaneraChia];
+  const marco = marcoCompaneraChia(boca);
+  document.querySelectorAll('.cara-companera-chia').forEach((el) => { el.textContent = marco; });
+  indiceBocaCompaneraChia = (indiceBocaCompaneraChia + 1) % BOCAS_COMPANERA_CHIA.length;
+}
+
+function companeraChiaAlCambiarEstado(hablando) {
+  clearInterval(temporizadorBocaCompaneraChia);
+  temporizadorBocaCompaneraChia = null;
+  if (hablando) {
+    pintarBocaCompaneraChia();
+    temporizadorBocaCompaneraChia = setInterval(pintarBocaCompaneraChia, 220);
+  } else {
+    indiceBocaCompaneraChia = 0;
+    document.querySelectorAll('.cara-companera-chia').forEach((el) => { el.textContent = marcoCompaneraChia('-'); });
+  }
+}
+
+function aplicarVarianteCompaneraChia(variante) {
+  document.getElementById('modo-lectura').dataset.varianteChia = variante || 'ninguna';
+}
 
 function iniciarLecturaEnVoz() {
   if (!articuloListoParaVoz) return;
@@ -1686,6 +1732,7 @@ function poblarFormularioConfiguracion(config) {
   document.getElementById('input-voz-velocidad').value = String(config.vozVelocidad ?? 1);
   document.getElementById('input-voz-siguiente-auto').checked = Boolean(config.vozSiguienteAuto);
   pintarSelectorCarasChia(config.caraChiaPredeterminada || 'relajado');
+  document.getElementById('input-variante-chia-prueba').value = config.varianteCompaneraChiaPrueba || 'ninguna'; // PRUEBA TEMPORAL
 }
 
 // Todo lo que debe verse reflejado DE INMEDIATO en el resto de la app —
@@ -1702,6 +1749,7 @@ function aplicarConfigEnVivo(config, origen) {
   document.getElementById('alternar-calido').classList.toggle('guardado', Boolean(config.modoCalidoLectura));
   aplicarOpcionesVoz(config);
   aplicarTamanoTexto(config.escalaTextoLectura || 0);
+  aplicarVarianteCompaneraChia(config.varianteCompaneraChiaPrueba); // PRUEBA TEMPORAL
 
   if (NOTICIAS_POR_PAGINA !== config.noticiasPorPagina) {
     NOTICIAS_POR_PAGINA = config.noticiasPorPagina;
@@ -1765,7 +1813,8 @@ const CAMPOS_CONFIGURACION = {
   'input-iniciar-con-windows': (el) => ({ iniciarConWindows: el.checked }),
   'input-voz-nombre': (el) => ({ vozNombre: el.value }),
   'input-voz-velocidad': (el) => ({ vozVelocidad: Number(el.value) }),
-  'input-voz-siguiente-auto': (el) => ({ vozSiguienteAuto: el.checked })
+  'input-voz-siguiente-auto': (el) => ({ vozSiguienteAuto: el.checked }),
+  'input-variante-chia-prueba': (el) => ({ varianteCompaneraChiaPrueba: el.value }) // PRUEBA TEMPORAL
 };
 
 Object.entries(CAMPOS_CONFIGURACION).forEach(([id, aCambios]) => {
@@ -2134,6 +2183,7 @@ async function iniciar() {
   document.getElementById('alternar-calido').classList.toggle('guardado', Boolean(config.modoCalidoLectura));
   aplicarOpcionesVoz(config);
   aplicarTamanoTexto(config.escalaTextoLectura || 0);
+  aplicarVarianteCompaneraChia(config.varianteCompaneraChiaPrueba); // PRUEBA TEMPORAL
 
   guardadosCache = await window.api.obtenerGuardados();
 
