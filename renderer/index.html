@@ -161,9 +161,18 @@
         <div id="lectura-contenido" class="contenido-articulo"></div>
       </div>
 
-      <!-- Reproductor de la lectura en voz alta (ver lector-voz.js). Va
-           dentro del panel pero fuera de .area-scroll para quedarse fijo
-           abajo mientras el artículo se desplaza. -->
+    </div>
+
+    <!-- Compañera de Chía: ventana flotante a la derecha mientras suena la
+         lectura en voz alta — position:fixed (ver el comentario de
+         #pildora-seleccion más abajo sobre por qué esto tiene que vivir
+         fuera de .panel-articulo), así NO le quita ancho al artículo ni lo
+         empuja. El reproductor de voz (ver lector-voz.js) vive DENTRO de
+         este panel, debajo de la cara — ya no es una píldora aparte
+         flotando sobre el artículo. Tamaño elegible en Configuración > Chía. -->
+    <div id="companera-chia" class="companera-chia oculto">
+      <pre class="cara-companera-chia" aria-hidden="true"></pre>
+      <div class="onda-companera-chia"><span></span><span></span><span></span><span></span><span></span></div>
       <div id="reproductor-voz" class="reproductor-voz oculto" role="region" aria-label="Lectura en voz alta">
         <button id="voz-anterior" class="boton-nav" title="Párrafo anterior"><i class="icono-fluent" aria-hidden="true">&#xE892;</i></button>
         <button id="voz-pausa" class="boton-nav boton-voz-principal" title="Pausar"><i class="icono-fluent" id="icono-voz-pausa" aria-hidden="true">&#xE769;</i></button>
@@ -173,17 +182,6 @@
         <button id="voz-detener" class="boton-nav" title="Detener (vuelve al inicio)"><i class="icono-fluent" aria-hidden="true">&#xE71A;</i></button>
         <button id="voz-cerrar" class="boton-nav" title="Cerrar el reproductor"><i class="icono-fluent" aria-hidden="true">&#xE711;</i></button>
       </div>
-
-    </div>
-
-    <!-- Compañera de Chía: aparece mientras suena la lectura en voz alta,
-         como un panel más de la fila (mismo trato que la barra lateral),
-         no flotando sobre el artículo. Solo ocupa espacio cuando está
-         visible — con la lectura apagada, panel-articulo usa todo el ancho
-         como siempre. Tamaño elegible en Configuración > Chía. -->
-    <div id="companera-chia" class="companera-chia oculto">
-      <pre class="cara-companera-chia" aria-hidden="true"></pre>
-      <div class="onda-companera-chia"><span></span><span></span><span></span><span></span><span></span></div>
     </div>
 
     <!-- Fuera de .panel-articulo a propósito: ese panel tiene backdrop-filter

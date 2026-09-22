@@ -917,7 +917,6 @@ LectorVoz.alCambiar(({ estado, indice, total, bloque }) => {
   // ya no tiene un párrafo "en curso".
   const conParrafo = estado === 'leyendo' || estado === 'pausado';
   document.getElementById('reproductor-voz').classList.toggle('oculto', !activo);
-  document.getElementById('lectura-contenido').classList.toggle('con-reproductor', activo);
 
   const botonEscuchar = document.getElementById('escuchar-articulo');
   botonEscuchar.classList.toggle('escuchando', activo);

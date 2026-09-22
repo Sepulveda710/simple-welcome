@@ -874,22 +874,18 @@ h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.2px; }
   transform: translate(-50%, 0);
 }
 
+/* Ya no es una píldora flotante propia — vive dentro de .companera-chia
+   (ver más abajo), así que aquí solo es el envoltorio flex de sus botones;
+   el fondo/blur/sombra de tarjeta los pone el panel que la contiene. */
 .reproductor-voz {
-  position: absolute;
-  bottom: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 3;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  background: var(--superficie-fuerte);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid var(--borde);
-  border-radius: 999px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  padding-top: 12px;
+  border-top: 1px solid var(--borde);
 }
 /* .oculto (display: none) es más débil que el display: flex de arriba y de
    .boton-nav — sin esto la clase se agrega pero el elemento sigue visible. */
@@ -910,13 +906,14 @@ h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.2px; }
   font-variant-numeric: tabular-nums;
 }
 
-/* Compañera de Chía durante la lectura en voz alta (decidido 2026-09-21,
-   tras comparar 4 propuestas: Abel eligió el diseño de la tarjeta —cara +
-   barras de sonido— pero como un panel fijo a la derecha, igual que la
-   barra lateral, en vez de flotar encima del artículo). Es un hijo más de
-   #modo-lectura (display:flex), así que solo por eso ya se comporta como
-   "otro panel de la fila": mientras está oculta, panel-articulo usa el
-   ancho completo; en cuanto aparece, todo se acomoda solo, sin overlap. */
+/* Compañera de Chía durante la lectura en voz alta (2026-09-21; ajustado
+   otra vez tras verla en la app: Abel pidió que NO le quitara ancho al
+   artículo, así que pasó de "panel de la fila" a ventana flotante de
+   verdad — position:fixed, igual que #pildora-seleccion, por la misma
+   razón: si viviera dentro de .panel-articulo, su backdrop-filter +
+   overflow:hidden recortarían/reposicionarían un position:fixed contra el
+   panel en vez de contra la ventana. El reproductor de voz ahora vive
+   DENTRO de este panel, debajo de la cara — ver .reproductor-voz arriba. */
 .cara-companera-chia {
   font-family: "Cascadia Code", "Consolas", monospace;
   margin: 0;
@@ -925,18 +922,20 @@ h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.2px; }
 }
 
 .companera-chia {
-  flex-shrink: 0;
+  position: fixed;
+  top: 88px;
+  right: 24px;
+  z-index: 6;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: 14px;
-  height: 100%;
+  padding: 16px 14px;
   background: var(--superficie-fuerte);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--borde);
   border-radius: var(--radio-grande);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
 }
 .companera-chia.oculto { display: none; }
 .companera-chia:not(.oculto) { display: flex; }
@@ -971,9 +970,6 @@ h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.2px; }
 }
 /* Pausada, la onda se queda quieta en vez de seguir "hablando" sin sonido. */
 #modo-lectura:not(.leyendo) .onda-companera-chia span { animation-play-state: paused; }
-
-/* Espacio extra al final para que el reproductor no tape el último párrafo */
-.contenido-articulo.con-reproductor { padding-bottom: 90px; }
 
 /* Párrafo que se está leyendo en voz alta */
 .contenido-articulo .leyendo-ahora {
