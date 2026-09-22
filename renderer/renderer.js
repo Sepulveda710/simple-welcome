@@ -651,6 +651,40 @@ document.getElementById('indicador-tamano-texto').addEventListener('click', () =
   window.api.guardarConfiguracion({ escalaTextoLectura: 0 });
 });
 
+// Menús flotantes de la barra del artículo ("Aa" y "···"): los botones que
+// los abren y los paneles que muestran van emparejados por posición en este
+// array — así agregar un tercer menú el día de mañana es una línea más
+// aquí, no otro bloque de lógica repetida.
+const MENUS_FLOTANTES = [
+  ['abrir-tamano-texto', 'menu-tamano-texto'],
+  ['abrir-mas-opciones', 'menu-mas-opciones']
+];
+
+function cerrarMenusFlotantes() {
+  MENUS_FLOTANTES.forEach(([, idMenu]) => document.getElementById(idMenu).classList.add('oculto'));
+}
+
+MENUS_FLOTANTES.forEach(([idBoton, idMenu]) => {
+  document.getElementById(idBoton).addEventListener('click', (evento) => {
+    evento.stopPropagation(); // si no, el listener de "click fuera" de abajo lo cerraría en el mismo clic que lo abre
+    const menu = document.getElementById(idMenu);
+    const yaAbierto = !menu.classList.contains('oculto');
+    cerrarMenusFlotantes();
+    menu.classList.toggle('oculto', yaAbierto);
+  });
+});
+
+// Un clic en cualquier otro lado de la app cierra el menú que hubiera
+// abierto — el comportamiento normal de cualquier menú desplegable.
+document.addEventListener('click', cerrarMenusFlotantes);
+
+// Elegir algo del menú "···" también lo cierra, sin tocar el listener
+// propio de cada botón (guardar-articulo, alternar-calido, etc. siguen
+// haciendo lo suyo; este solo se encarga de ocultar el menú después).
+document.getElementById('menu-mas-opciones').addEventListener('click', (evento) => {
+  if (evento.target.closest('.item-menu-flotante')) cerrarMenusFlotantes();
+});
+
 async function abrirModoLectura(enlace, forzar = false, direccion = null) {
   const panel = document.getElementById('modo-lectura');
   const contenido = document.getElementById('lectura-contenido');
@@ -1942,7 +1976,9 @@ document.addEventListener('keydown', (evento) => {
   // puede haber una a la vez en la práctica), o si no hay ninguna y estás
   // escribiendo en un campo, le quita el foco.
   if (evento.key === 'Escape') {
-    if (!document.getElementById('capa-calendario-expandido').classList.contains('oculto')) {
+    if (MENUS_FLOTANTES.some(([, idMenu]) => !document.getElementById(idMenu).classList.contains('oculto'))) {
+      cerrarMenusFlotantes();
+    } else if (!document.getElementById('capa-calendario-expandido').classList.contains('oculto')) {
       cerrarCalendarioExpandido();
     } else if (!document.getElementById('panel-configuracion').classList.contains('oculto')) {
       cerrarConfiguracion();

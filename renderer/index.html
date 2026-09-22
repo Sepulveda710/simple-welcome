@@ -128,19 +128,31 @@
           <div class="navegacion-articulo">
             <button id="articulo-anterior" class="boton-nav"><i class="icono-fluent" aria-hidden="true">&#xE76B;</i> Anterior</button>
             <button id="articulo-siguiente" class="boton-nav">Siguiente <i class="icono-fluent" aria-hidden="true">&#xE76C;</i></button>
-            <button id="actualizar-articulo" class="boton-nav" title="Volver a intentar cargar este artículo"><i class="icono-fluent" aria-hidden="true">&#xE72C;</i></button>
-            <button id="escuchar-articulo" class="boton-nav" title="Escuchar este artículo"><i class="icono-fluent" aria-hidden="true">&#xE767;</i></button>
             <button id="guardar-articulo" class="boton-nav" title="Guardar para después"><i class="icono-fluent" aria-hidden="true">&#xE734;</i></button>
-            <button id="compartir-articulo" class="boton-nav" title="Copiar enlace"><i class="icono-fluent" aria-hidden="true">&#xE72D;</i></button>
-            <!-- Tamaño del texto: "0" (sin +/-) es el tamaño base de siempre.
-                 Cada clic suma o resta un paso — ver PASO_TEXTO en renderer.js. -->
-            <div class="control-tamano-texto">
-              <button id="texto-mas-chico" class="boton-nav" title="Reducir tamaño de letra" type="button">A⁻</button>
-              <button id="indicador-tamano-texto" class="boton-nav" title="Restablecer tamaño de letra" type="button">100%</button>
-              <button id="texto-mas-grande" class="boton-nav" title="Aumentar tamaño de letra" type="button">A⁺</button>
+            <button id="escuchar-articulo" class="boton-nav" title="Escuchar este artículo"><i class="icono-fluent" aria-hidden="true">&#xE767;</i></button>
+
+            <!-- Tamaño del texto, detrás del botón "Aa" (rediseño 2026-09-21,
+                 opción 3 de las propuestas: menos ruido visual, sin botón de
+                 volver duplicado — ese ya vive en la barra lateral). "0" (sin
+                 +/-) es el tamaño base — ver PASO_TEXTO en renderer.js. -->
+            <div class="menu-flotante-contenedor">
+              <button id="abrir-tamano-texto" class="boton-nav" title="Tamaño de letra" type="button">Aa</button>
+              <div id="menu-tamano-texto" class="menu-flotante oculto">
+                <button id="texto-mas-chico" class="boton-nav" title="Reducir tamaño de letra" type="button">A⁻</button>
+                <button id="indicador-tamano-texto" class="boton-nav" title="Restablecer tamaño de letra" type="button">100%</button>
+                <button id="texto-mas-grande" class="boton-nav" title="Aumentar tamaño de letra" type="button">A⁺</button>
+              </div>
             </div>
-            <button id="alternar-calido" class="boton-nav" title="Modo cálido de lectura"><i class="icono-fluent" aria-hidden="true">&#xE706;</i></button>
-            <button id="abrir-externo" class="boton-nav" title="Abrir en el navegador"><i class="icono-fluent" aria-hidden="true">&#xE8A7;</i></button>
+
+            <div class="menu-flotante-contenedor">
+              <button id="abrir-mas-opciones" class="boton-nav" title="Más opciones" type="button"><i class="icono-fluent" aria-hidden="true">&#xE712;</i></button>
+              <div id="menu-mas-opciones" class="menu-flotante menu-flotante-lista oculto">
+                <button id="actualizar-articulo" class="item-menu-flotante" type="button"><i class="icono-fluent" aria-hidden="true">&#xE72C;</i> Volver a cargar</button>
+                <button id="compartir-articulo" class="item-menu-flotante" type="button"><i class="icono-fluent" aria-hidden="true">&#xE72D;</i> Copiar enlace</button>
+                <button id="alternar-calido" class="item-menu-flotante" type="button"><i class="icono-fluent" aria-hidden="true">&#xE706;</i> Modo cálido de lectura</button>
+                <button id="abrir-externo" class="item-menu-flotante" type="button"><i class="icono-fluent" aria-hidden="true">&#xE8A7;</i> Abrir en el navegador</button>
+              </div>
+            </div>
           </div>
         </div>
         <h2 id="lectura-titulo"></h2>

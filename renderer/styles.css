@@ -706,12 +706,70 @@ h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.2px; }
   background: rgba(168, 115, 12, 0.1);
 }
 
-.control-tamano-texto { display: flex; gap: 2px; }
-.control-tamano-texto .boton-nav { padding-left: 8px; padding-right: 8px; }
+/* Menús flotantes de la barra del artículo ("Aa" y "···" — rediseño
+   2026-09-21): mismo lenguaje visual que #pildora-seleccion (superficie
+   fuerte + blur), pero cuelgan hacia abajo desde su propio botón en vez de
+   flotar donde el usuario seleccionó texto. Un solo contenedor relative por
+   menú para que el popover se posicione contra SU botón, no contra toda la
+   barra — así da igual el orden en que aparezcan. */
+.menu-flotante-contenedor { position: relative; }
+
+.menu-flotante {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 5;
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  background: var(--superficie-fuerte);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+/* .oculto por sí sola (una clase) pierde el empate de especificidad contra
+   .menu-flotante (también una clase) según el orden del archivo — mismo
+   problema ya visto con .reproductor-voz en el lector de voz. Solución
+   igual: una regla con las DOS clases juntas, que sí le gana a cualquiera
+   de las dos por separado sin importar el orden. */
+.menu-flotante.oculto { display: none; }
+
+#menu-tamano-texto .boton-nav { padding-left: 8px; padding-right: 8px; }
 #indicador-tamano-texto {
   font-variant-numeric: tabular-nums;
   min-width: 44px;
   justify-content: center;
+}
+
+.menu-flotante-lista {
+  flex-direction: column;
+  min-width: 210px;
+}
+
+.item-menu-flotante {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--texto-solido);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.item-menu-flotante:hover { background: rgba(0, 0, 0, 0.06); }
+.item-menu-flotante .icono-fluent { width: 16px; text-align: center; }
+/* Estado "activo" del modo cálido dentro del menú — mismo lenguaje que
+   .boton-nav.guardado, pero como fondo de fila completa (es una lista, no
+   un ícono suelto). */
+.item-menu-flotante.guardado {
+  color: #a8730c;
+  background: rgba(168, 115, 12, 0.1);
 }
 
 /* Botón "escuchar" mientras hay una lectura en voz alta en marcha */
