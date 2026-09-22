@@ -936,18 +936,16 @@ LectorVoz.alCambiar(({ estado, indice, total, bloque }) => {
     mostrarBloqueSiHaceFalta(bloqueResaltado);
   }
 
-  // PRUEBA TEMPORAL: la boca de Chía se mueve mientras de verdad está
-  // sonando la voz, y se congela cerrada en pausa/detenido — no distingue
-  // sílabas, solo un ciclo simple (ver companeraChiaAlCambiarEstado abajo).
+  // Compañera de Chía: aparece con el reproductor y su boca se mueve
+  // mientras de verdad está sonando la voz — congelada en pausa/detenido
+  // (ver companeraChiaAlCambiarEstado abajo).
+  document.getElementById('companera-chia').classList.toggle('oculto', !activo);
   document.getElementById('modo-lectura').classList.toggle('leyendo', estado === 'leyendo');
   companeraChiaAlCambiarEstado(estado === 'leyendo');
 });
 
-// --- PRUEBA TEMPORAL: 4 propuestas de "Chía habla" (ver el comentario
-// grande junto a #companera-chia-1 en index.html). Todo este bloque —
-// variables, funciones y sus usos arriba — se borra entero en cuanto Abel
-// elija una de las 4 variantes definitivas.
-const BOCAS_COMPANERA_CHIA = ['-', 'o', 'u', 'o']; // ciclo simple de "habla", no sincronizado a sílabas
+// --- Compañera de Chía: boca animada mientras lee en voz alta ---
+const BOCAS_COMPANERA_CHIA = ['-', 'o', 'u', 'o']; // ciclo simple de "habla", no sincronizado a sílabas — ver CLAUDE.md
 let indiceBocaCompaneraChia = 0;
 let temporizadorBocaCompaneraChia = null;
 
@@ -962,8 +960,7 @@ function marcoCompaneraChia(boca) {
 
 function pintarBocaCompaneraChia() {
   const boca = BOCAS_COMPANERA_CHIA[indiceBocaCompaneraChia];
-  const marco = marcoCompaneraChia(boca);
-  document.querySelectorAll('.cara-companera-chia').forEach((el) => { el.textContent = marco; });
+  document.querySelector('#companera-chia .cara-companera-chia').textContent = marcoCompaneraChia(boca);
   indiceBocaCompaneraChia = (indiceBocaCompaneraChia + 1) % BOCAS_COMPANERA_CHIA.length;
 }
 
@@ -975,12 +972,14 @@ function companeraChiaAlCambiarEstado(hablando) {
     temporizadorBocaCompaneraChia = setInterval(pintarBocaCompaneraChia, 220);
   } else {
     indiceBocaCompaneraChia = 0;
-    document.querySelectorAll('.cara-companera-chia').forEach((el) => { el.textContent = marcoCompaneraChia('-'); });
+    document.querySelector('#companera-chia .cara-companera-chia').textContent = marcoCompaneraChia('-');
   }
 }
 
-function aplicarVarianteCompaneraChia(variante) {
-  document.getElementById('modo-lectura').dataset.varianteChia = variante || 'ninguna';
+// Tamaño elegible en Configuración > Chía (ver .companera-chia[data-tamano]
+// en styles.css).
+function aplicarTamanoCompaneraChia(tamano) {
+  document.getElementById('companera-chia').dataset.tamano = tamano || 'mediana';
 }
 
 function iniciarLecturaEnVoz() {
@@ -1732,7 +1731,7 @@ function poblarFormularioConfiguracion(config) {
   document.getElementById('input-voz-velocidad').value = String(config.vozVelocidad ?? 1);
   document.getElementById('input-voz-siguiente-auto').checked = Boolean(config.vozSiguienteAuto);
   pintarSelectorCarasChia(config.caraChiaPredeterminada || 'relajado');
-  document.getElementById('input-variante-chia-prueba').value = config.varianteCompaneraChiaPrueba || 'ninguna'; // PRUEBA TEMPORAL
+  document.getElementById('input-tamano-companera-chia').value = config.companeraChiaTamano || 'mediana';
 }
 
 // Todo lo que debe verse reflejado DE INMEDIATO en el resto de la app —
@@ -1749,7 +1748,7 @@ function aplicarConfigEnVivo(config, origen) {
   document.getElementById('alternar-calido').classList.toggle('guardado', Boolean(config.modoCalidoLectura));
   aplicarOpcionesVoz(config);
   aplicarTamanoTexto(config.escalaTextoLectura || 0);
-  aplicarVarianteCompaneraChia(config.varianteCompaneraChiaPrueba); // PRUEBA TEMPORAL
+  aplicarTamanoCompaneraChia(config.companeraChiaTamano);
 
   if (NOTICIAS_POR_PAGINA !== config.noticiasPorPagina) {
     NOTICIAS_POR_PAGINA = config.noticiasPorPagina;
@@ -1814,7 +1813,7 @@ const CAMPOS_CONFIGURACION = {
   'input-voz-nombre': (el) => ({ vozNombre: el.value }),
   'input-voz-velocidad': (el) => ({ vozVelocidad: Number(el.value) }),
   'input-voz-siguiente-auto': (el) => ({ vozSiguienteAuto: el.checked }),
-  'input-variante-chia-prueba': (el) => ({ varianteCompaneraChiaPrueba: el.value }) // PRUEBA TEMPORAL
+  'input-tamano-companera-chia': (el) => ({ companeraChiaTamano: el.value })
 };
 
 Object.entries(CAMPOS_CONFIGURACION).forEach(([id, aCambios]) => {
@@ -2183,7 +2182,7 @@ async function iniciar() {
   document.getElementById('alternar-calido').classList.toggle('guardado', Boolean(config.modoCalidoLectura));
   aplicarOpcionesVoz(config);
   aplicarTamanoTexto(config.escalaTextoLectura || 0);
-  aplicarVarianteCompaneraChia(config.varianteCompaneraChiaPrueba); // PRUEBA TEMPORAL
+  aplicarTamanoCompaneraChia(config.companeraChiaTamano);
 
   guardadosCache = await window.api.obtenerGuardados();
 

@@ -910,30 +910,52 @@ h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.2px; }
   font-variant-numeric: tabular-nums;
 }
 
-/* PRUEBA TEMPORAL (2026-09-21): 4 propuestas de "Chía habla" mientras suena
-   la lectura en voz alta — ver el comentario grande junto a
-   #companera-chia-1 en index.html. #modo-lectura[data-variante-chia="N"]
-   decide cuál se ve; las otras se quedan con display:none. Se borra este
-   bloque entero (y las reglas .oculto asociadas) en cuanto Abel elija una. */
+/* Compañera de Chía durante la lectura en voz alta (decidido 2026-09-21,
+   tras comparar 4 propuestas: Abel eligió el diseño de la tarjeta —cara +
+   barras de sonido— pero como un panel fijo a la derecha, igual que la
+   barra lateral, en vez de flotar encima del artículo). Es un hijo más de
+   #modo-lectura (display:flex), así que solo por eso ya se comporta como
+   "otro panel de la fila": mientras está oculta, panel-articulo usa el
+   ancho completo; en cuanto aparece, todo se acomoda solo, sin overlap. */
 .cara-companera-chia {
   font-family: "Cascadia Code", "Consolas", monospace;
   margin: 0;
   white-space: pre;
+  color: var(--accent-texto);
 }
 
-.companera-chia,
-.cara-companera-chia-3 { display: none; }
-
-#modo-lectura[data-variante-chia="1"] .companera-chia-1,
-#modo-lectura[data-variante-chia="2"] .companera-chia-2,
-#modo-lectura[data-variante-chia="4"] .companera-chia-4,
-#modo-lectura[data-variante-chia="3"] .cara-companera-chia-3 {
-  display: flex;
+.companera-chia {
+  flex-shrink: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  height: 100%;
+  background: var(--superficie-fuerte);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-grande);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
 }
+.companera-chia.oculto { display: none; }
+.companera-chia:not(.oculto) { display: flex; }
 
-.onda-companera-chia { display: flex; align-items: flex-end; gap: 2px; height: 16px; }
+/* Tamaño elegible en Configuración > Chía — ver aplicarTamanoCompaneraChia
+   en renderer.js. "mediana" es el valor por defecto. */
+.companera-chia[data-tamano="pequena"] { width: 90px; }
+.companera-chia[data-tamano="pequena"] .cara-companera-chia { font-size: 13px; }
+.companera-chia[data-tamano="pequena"] .onda-companera-chia { height: 14px; }
+.companera-chia[data-tamano="mediana"] { width: 130px; }
+.companera-chia[data-tamano="mediana"] .cara-companera-chia { font-size: 17px; }
+.companera-chia[data-tamano="mediana"] .onda-companera-chia { height: 20px; }
+.companera-chia[data-tamano="grande"] { width: 170px; }
+.companera-chia[data-tamano="grande"] .cara-companera-chia { font-size: 22px; }
+.companera-chia[data-tamano="grande"] .onda-companera-chia { height: 26px; }
+
+.onda-companera-chia { display: flex; align-items: flex-end; gap: 3px; }
 .onda-companera-chia span {
-  width: 3px;
+  width: 4px;
   border-radius: 1px;
   background: var(--accent);
   animation: onda-companera-chia 0.9s ease-in-out infinite;
@@ -947,83 +969,8 @@ h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.2px; }
   0%, 100% { transform: scaleY(0.4); }
   50% { transform: scaleY(1); }
 }
-/* Pausada, la onda se queda quieta en vez de seguir "hablando" sin sonido.
-   La clase va en #modo-lectura (no en #reproductor-voz) porque las
-   variantes 1 y 4 son hermanas del reproductor, no están adentro. */
+/* Pausada, la onda se queda quieta en vez de seguir "hablando" sin sonido. */
 #modo-lectura:not(.leyendo) .onda-companera-chia span { animation-play-state: paused; }
-
-/* 1: tarjeta flotante arriba a la derecha del panel */
-.companera-chia-1 {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  z-index: 4;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  width: 110px;
-  padding: 12px;
-  background: var(--superficie-fuerte);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio-grande);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
-}
-.companera-chia-1 .cara-companera-chia { font-size: 15px; color: var(--accent-texto); }
-
-/* 2: burbuja circular abajo a la derecha */
-.companera-chia-2 {
-  position: absolute;
-  bottom: 16px;
-  right: 16px;
-  z-index: 4;
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  align-items: center;
-  justify-content: center;
-  background: var(--superficie-fuerte);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--accent);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
-}
-.companera-chia-2 .cara-companera-chia { font-size: 9px; color: var(--accent-texto); }
-
-/* 3: dentro del propio reproductor, como primer elemento */
-.cara-companera-chia-3 {
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: var(--accent-fondo);
-  font-size: 8px;
-  color: var(--accent-texto);
-}
-
-/* 4: franja lateral fija en el borde derecho del panel, todo el alto */
-.companera-chia-4 {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 4;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  width: 84px;
-  background: var(--superficie-fuerte);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-left: 1px solid var(--borde);
-}
-.companera-chia-4 .cara-companera-chia { font-size: 16px; color: var(--accent-texto); }
-/* Le hace espacio al texto para que la franja no tape las últimas letras. */
-#modo-lectura[data-variante-chia="4"] .encabezado-articulo,
-#modo-lectura[data-variante-chia="4"] .contenido-articulo { padding-right: 100px; }
 
 /* Espacio extra al final para que el reproductor no tape el último párrafo */
 .contenido-articulo.con-reproductor { padding-bottom: 90px; }
