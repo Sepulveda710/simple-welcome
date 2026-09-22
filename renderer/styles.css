@@ -913,6 +913,13 @@ h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.2px; }
   background: var(--accent-fondo);
 }
 .reproductor-voz .icono-fluent { font-size: 13px; }
+.icono-cuadrado-detener {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  background: currentColor;
+  border-radius: 2px;
+}
 .reproductor-voz .voz-progreso { justify-self: center; align-self: center; }
 
 /* Cerrar el reproductor: separado del resto a propósito (Abel lo pidió

@@ -182,7 +182,11 @@
         <button id="voz-siguiente" class="boton-nav" title="Párrafo siguiente"><i class="icono-fluent" aria-hidden="true">&#xE893;</i></button>
         <button id="voz-velocidad" class="boton-nav" title="Velocidad de lectura">1×</button>
         <span id="voz-progreso" class="voz-progreso"></span>
-        <button id="voz-detener" class="boton-nav" title="Detener (vuelve al inicio)"><i class="icono-fluent" aria-hidden="true">&#xE71A;</i></button>
+        <!-- El glifo de "Detener" de Segoe Fluent (E71A) sale hueco/plano al
+             lado de los demás, que son íconos sólidos (Abel lo notó, se veía
+             mal) — un cuadrado dibujado con CSS es más limpio y consistente
+             que perseguir otro glifo de la fuente. -->
+        <button id="voz-detener" class="boton-nav" title="Detener (vuelve al inicio)"><span class="icono-cuadrado-detener" aria-hidden="true"></span></button>
       </div>
       <!-- Aparte del resto (Abel lo pidió separado, no mezclado con los
            demás íconos) — se oculta igual que todo lo demás porque cuelga
