@@ -875,29 +875,45 @@ h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.2px; }
 }
 
 /* Ya no es una píldora flotante propia — vive dentro de .companera-chia
-   (ver más abajo), así que aquí solo es el envoltorio flex de sus botones;
-   el fondo/blur/sombra de tarjeta los pone el panel que la contiene. */
+   (ver más abajo), así que aquí solo es el envoltorio de sus botones; el
+   fondo/blur/sombra de tarjeta los pone el panel que la contiene.
+   Cuadrícula fija de 3 columnas (no flex-wrap) a propósito — Abel pidió
+   "más estética la distribución": con flex-wrap el número de botones por
+   fila cambiaba según el ancho del panel (a veces 4+2, a veces 3+3), acá
+   siempre son 2 filas parejas de 3, sin importar el ancho. El orden en el
+   HTML ya cae bien: anterior/pausa/siguiente arriba,
+   velocidad/progreso/detener abajo. */
 .reproductor-voz {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
   width: 100%;
   padding-top: 12px;
   border-top: 1px solid var(--borde);
 }
-/* .oculto (display: none) es más débil que el display: flex de arriba y de
-   .boton-nav — sin esto la clase se agrega pero el elemento sigue visible. */
+/* .oculto (display: none) es más débil que el display: flex/grid de arriba
+   y de .boton-nav — sin esto la clase se agrega pero el elemento sigue
+   visible. */
 .reproductor-voz.oculto,
 .boton-nav.oculto { display: none; }
-.reproductor-voz .boton-nav { border-radius: 999px; min-width: 32px; justify-content: center; }
+/* Tamaño fijo, NO ligado a --ancho-companera (ver la nota arriba de
+   .cara-companera-chia) — botones chicos y consistentes sea cual sea el
+   tamaño del panel. */
+.reproductor-voz .boton-nav {
+  border-radius: 999px;
+  width: 32px;
+  height: 32px;
+  min-width: 0;
+  padding: 0;
+  justify-self: center;
+}
 .reproductor-voz .boton-voz-principal {
   color: var(--accent-texto);
   border-color: var(--accent);
   background: var(--accent-fondo);
 }
 .reproductor-voz .icono-fluent { font-size: 13px; }
+.reproductor-voz .voz-progreso { justify-self: center; align-self: center; }
 
 /* Cerrar el reproductor: separado del resto a propósito (Abel lo pidió
    aparte del grupo de íconos, no mezclado) — círculo propio debajo de todo,
@@ -952,7 +968,7 @@ h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.2px; }
    src/configuracion.js). */
 .companera-chia {
   position: fixed;
-  top: 88px;
+  top: 20px; /* mismo margen que "padding: 20px" del body — alinea su borde de arriba con el del artículo */
   right: 24px;
   z-index: 6;
   width: var(--ancho-companera, 200px);
@@ -970,14 +986,13 @@ h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.2px; }
 .companera-chia.oculto { display: none; }
 .companera-chia:not(.oculto) { display: flex; }
 
+/* Solo la cara y la onda escalan con el ancho — los botones NO: crecer al
+   mismo ritmo que el panel los volvía enormes y desproporcionados apenas
+   Abel agrandaba un poco la ventana (Abel lo pidió corregir, 2026-09-22).
+   Se quedan en un tamaño cómodo fijo, igual de chico sea el panel grande o
+   chico. */
 .cara-companera-chia { font-size: calc(var(--ancho-companera, 200px) * 0.13); }
 .onda-companera-chia { height: calc(var(--ancho-companera, 200px) * 0.15); }
-.companera-chia .reproductor-voz .boton-nav {
-  min-width: calc(var(--ancho-companera, 200px) * 0.22);
-  height: calc(var(--ancho-companera, 200px) * 0.22);
-  font-size: calc(var(--ancho-companera, 200px) * 0.085);
-}
-.companera-chia .reproductor-voz .icono-fluent { font-size: calc(var(--ancho-companera, 200px) * 0.095); }
 
 /* Esquina inferior izquierda a propósito: el panel está anclado por la
    DERECHA (right: 24px fijo), así que arrastrar hacia la izquierda es lo
