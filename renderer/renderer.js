@@ -975,11 +975,51 @@ function companeraChiaAlCambiarEstado(hablando) {
   }
 }
 
-// Tamaño elegible en Configuración > Chía (ver .companera-chia[data-tamano]
-// en styles.css).
-function aplicarTamanoCompaneraChia(tamano) {
-  document.getElementById('companera-chia').dataset.tamano = tamano || 'mediana';
+// Tamaño de la compañera: arrastrable con el mouse desde #asa-companera-chia
+// (ver .companera-chia en styles.css — todo lo demás, cara/onda/botones,
+// escala solo desde esta única variable). Los límites evitan que quede
+// ilegible de chica o que se salga de la ventana de grande.
+const ANCHO_COMPANERA_CHIA_DEFECTO = 200;
+const ANCHO_COMPANERA_CHIA_MIN = 130;
+const ANCHO_COMPANERA_CHIA_MAX = 420;
+
+function aplicarAnchoCompaneraChia(ancho) {
+  const limitado = Math.min(ANCHO_COMPANERA_CHIA_MAX, Math.max(ANCHO_COMPANERA_CHIA_MIN, ancho || ANCHO_COMPANERA_CHIA_DEFECTO));
+  document.getElementById('companera-chia').style.setProperty('--ancho-companera', `${limitado}px`);
+  return limitado;
 }
+
+// Arrastrar la esquina cambia el ancho en vivo; solo se guarda en
+// Configuración al soltar el mouse, no en cada pixel que se mueve.
+function iniciarArrastreCompaneraChia(eventoInicial) {
+  eventoInicial.preventDefault();
+  const anchoInicial = document.getElementById('companera-chia').getBoundingClientRect().width;
+  const xInicial = eventoInicial.clientX;
+  document.body.style.userSelect = 'none'; // sin esto, arrastrar rápido selecciona el texto del artículo de fondo
+
+  function alMover(evento) {
+    // El panel está anclado por la derecha — arrastrar hacia la
+    // IZQUIERDA (x baja) es lo que debe agrandarlo.
+    aplicarAnchoCompaneraChia(anchoInicial + (xInicial - evento.clientX));
+  }
+
+  function alSoltar() {
+    document.removeEventListener('mousemove', alMover);
+    document.removeEventListener('mouseup', alSoltar);
+    document.body.style.userSelect = '';
+    const anchoFinal = document.getElementById('companera-chia').getBoundingClientRect().width;
+    window.api.guardarConfiguracion({ companeraChiaAncho: Math.round(anchoFinal) });
+  }
+
+  document.addEventListener('mousemove', alMover);
+  document.addEventListener('mouseup', alSoltar);
+}
+
+document.getElementById('asa-companera-chia').addEventListener('mousedown', iniciarArrastreCompaneraChia);
+document.getElementById('asa-companera-chia').addEventListener('dblclick', () => {
+  aplicarAnchoCompaneraChia(ANCHO_COMPANERA_CHIA_DEFECTO);
+  window.api.guardarConfiguracion({ companeraChiaAncho: ANCHO_COMPANERA_CHIA_DEFECTO });
+});
 
 function iniciarLecturaEnVoz() {
   if (!articuloListoParaVoz) return;
@@ -1730,7 +1770,6 @@ function poblarFormularioConfiguracion(config) {
   document.getElementById('input-voz-velocidad').value = String(config.vozVelocidad ?? 1);
   document.getElementById('input-voz-siguiente-auto').checked = Boolean(config.vozSiguienteAuto);
   pintarSelectorCarasChia(config.caraChiaPredeterminada || 'relajado');
-  document.getElementById('input-tamano-companera-chia').value = config.companeraChiaTamano || 'mediana';
 }
 
 // Todo lo que debe verse reflejado DE INMEDIATO en el resto de la app —
@@ -1747,7 +1786,7 @@ function aplicarConfigEnVivo(config, origen) {
   document.getElementById('alternar-calido').classList.toggle('guardado', Boolean(config.modoCalidoLectura));
   aplicarOpcionesVoz(config);
   aplicarTamanoTexto(config.escalaTextoLectura || 0);
-  aplicarTamanoCompaneraChia(config.companeraChiaTamano);
+  aplicarAnchoCompaneraChia(config.companeraChiaAncho);
 
   if (NOTICIAS_POR_PAGINA !== config.noticiasPorPagina) {
     NOTICIAS_POR_PAGINA = config.noticiasPorPagina;
@@ -1812,7 +1851,6 @@ const CAMPOS_CONFIGURACION = {
   'input-voz-nombre': (el) => ({ vozNombre: el.value }),
   'input-voz-velocidad': (el) => ({ vozVelocidad: Number(el.value) }),
   'input-voz-siguiente-auto': (el) => ({ vozSiguienteAuto: el.checked }),
-  'input-tamano-companera-chia': (el) => ({ companeraChiaTamano: el.value })
 };
 
 Object.entries(CAMPOS_CONFIGURACION).forEach(([id, aCambios]) => {
@@ -2181,7 +2219,7 @@ async function iniciar() {
   document.getElementById('alternar-calido').classList.toggle('guardado', Boolean(config.modoCalidoLectura));
   aplicarOpcionesVoz(config);
   aplicarTamanoTexto(config.escalaTextoLectura || 0);
-  aplicarTamanoCompaneraChia(config.companeraChiaTamano);
+  aplicarAnchoCompaneraChia(config.companeraChiaAncho);
 
   guardadosCache = await window.api.obtenerGuardados();
 

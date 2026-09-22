@@ -169,8 +169,11 @@
          fuera de .panel-articulo), así NO le quita ancho al artículo ni lo
          empuja. El reproductor de voz (ver lector-voz.js) vive DENTRO de
          este panel, debajo de la cara — ya no es una píldora aparte
-         flotando sobre el artículo. Tamaño elegible en Configuración > Chía. -->
+         flotando sobre el artículo. Tamaño ajustable arrastrando
+         #asa-companera-chia con el mouse, como una ventana real — ver
+         iniciarArrastreCompaneraChia en renderer.js. -->
     <div id="companera-chia" class="companera-chia oculto">
+      <div id="asa-companera-chia" class="asa-companera-chia" title="Arrastra para cambiar el tamaño (doble clic para restablecer)"></div>
       <pre class="cara-companera-chia" aria-hidden="true"></pre>
       <div class="onda-companera-chia"><span></span><span></span><span></span><span></span><span></span></div>
       <div id="reproductor-voz" class="reproductor-voz oculto" role="region" aria-label="Lectura en voz alta">
@@ -321,14 +324,11 @@
             <div id="selector-caras-chia" class="selector-caras-chia"></div>
           </div>
 
-          <label class="campo-configuracion">
-            <span>Tamaño de Chía al leer en voz alta</span>
-            <select id="input-tamano-companera-chia">
-              <option value="pequena">Pequeño</option>
-              <option value="mediana">Mediano</option>
-              <option value="grande">Grande</option>
-            </select>
-          </label>
+          <p class="ayuda-comentarios">
+            El tamaño del panel de Chía al leer en voz alta se ajusta
+            arrastrando su esquina, como una ventana — doble clic en la
+            esquina para volver al tamaño normal.
+          </p>
         </section>
 
         <section class="seccion-configuracion oculto" data-seccion="voz">

@@ -942,11 +942,20 @@ h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.2px; }
   color: var(--accent-texto);
 }
 
+/* Tamaño arrastrable (2026-09-21, reemplaza al selector de 3 tamaños fijos
+   de antes — Abel pidió poder cambiarlo "a mano con el mouse, como una
+   ventana"): TODO cuelga de una sola variable, --ancho-companera, que
+   arrastrarCompaneraChia() en renderer.js actualiza en vivo mientras
+   arrastras #asa-companera-chia — así la cara, la onda y los botones
+   escalan juntos, proporcionales, en vez de saltar entre 3 tamaños fijos.
+   200px es el valor por defecto (VALORES_POR_DEFECTO.companeraChiaAncho en
+   src/configuracion.js). */
 .companera-chia {
   position: fixed;
   top: 88px;
   right: 24px;
   z-index: 6;
+  width: var(--ancho-companera, 200px);
   flex-direction: column;
   align-items: center;
   gap: 14px;
@@ -961,27 +970,34 @@ h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.2px; }
 .companera-chia.oculto { display: none; }
 .companera-chia:not(.oculto) { display: flex; }
 
-/* Tamaño elegible en Configuración > Chía — ver aplicarTamanoCompaneraChia
-   en renderer.js. "mediana" es el valor por defecto. Agrandado entero
-   (cara, onda Y los botones del reproductor) a pedido de Abel, que dibujó
-   sobre una captura lo chico que se veía todo — 2026-09-21. */
-.companera-chia[data-tamano="pequena"] { width: 150px; }
-.companera-chia[data-tamano="pequena"] .cara-companera-chia { font-size: 20px; }
-.companera-chia[data-tamano="pequena"] .onda-companera-chia { height: 22px; }
-.companera-chia[data-tamano="pequena"] .reproductor-voz .boton-nav { min-width: 38px; height: 38px; font-size: 15px; }
-.companera-chia[data-tamano="pequena"] .reproductor-voz .icono-fluent { font-size: 16px; }
+.cara-companera-chia { font-size: calc(var(--ancho-companera, 200px) * 0.13); }
+.onda-companera-chia { height: calc(var(--ancho-companera, 200px) * 0.15); }
+.companera-chia .reproductor-voz .boton-nav {
+  min-width: calc(var(--ancho-companera, 200px) * 0.22);
+  height: calc(var(--ancho-companera, 200px) * 0.22);
+  font-size: calc(var(--ancho-companera, 200px) * 0.085);
+}
+.companera-chia .reproductor-voz .icono-fluent { font-size: calc(var(--ancho-companera, 200px) * 0.095); }
 
-.companera-chia[data-tamano="mediana"] { width: 200px; }
-.companera-chia[data-tamano="mediana"] .cara-companera-chia { font-size: 26px; }
-.companera-chia[data-tamano="mediana"] .onda-companera-chia { height: 30px; }
-.companera-chia[data-tamano="mediana"] .reproductor-voz .boton-nav { min-width: 44px; height: 44px; font-size: 17px; }
-.companera-chia[data-tamano="mediana"] .reproductor-voz .icono-fluent { font-size: 19px; }
-
-.companera-chia[data-tamano="grande"] { width: 260px; }
-.companera-chia[data-tamano="grande"] .cara-companera-chia { font-size: 34px; }
-.companera-chia[data-tamano="grande"] .onda-companera-chia { height: 40px; }
-.companera-chia[data-tamano="grande"] .reproductor-voz .boton-nav { min-width: 50px; height: 50px; font-size: 19px; }
-.companera-chia[data-tamano="grande"] .reproductor-voz .icono-fluent { font-size: 22px; }
+/* Esquina inferior izquierda a propósito: el panel está anclado por la
+   DERECHA (right: 24px fijo), así que arrastrar hacia la izquierda es lo
+   que "agranda la ventana" sin que se salga de la pantalla por el otro
+   lado. Solo cambia el ancho (alto y el resto ya escalan con él vía las
+   variables de arriba) — por eso el cursor es ew-resize, no nwse-resize. */
+.asa-companera-chia {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 18px;
+  height: 18px;
+  cursor: ew-resize;
+  border-bottom: 2px solid var(--texto-terciario);
+  border-left: 2px solid var(--texto-terciario);
+  border-radius: 0 0 0 6px;
+  opacity: 0.5;
+  transition: opacity 0.12s ease;
+}
+.asa-companera-chia:hover { opacity: 1; }
 
 .onda-companera-chia { display: flex; align-items: flex-end; gap: 3px; }
 .onda-companera-chia span {
