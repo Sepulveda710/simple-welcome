@@ -49,16 +49,43 @@
    resto de la app en oscuro, o en claro, sin que se estorben.
    Colores pensados para reducir fatiga visual (poca luz azul, bajo
    contraste/brillo): un tono papel envejecido en vez de un blanco/crema
-   brillante, y un café cálido en vez de negro puro para el texto. */
-#modo-lectura.calido #panel-articulo,
-#modo-lectura.calido .encabezado-articulo,
-#modo-lectura.calido .contenido-articulo {
-  background: #ede0c8;
-  color: #4a3728;
+   brillante, y un café cálido en vez de negro puro para el texto.
+
+   A partir de 2026-09-21 esto REDEFINE las variables de tema en vez de
+   pintar 3 selectores sueltos (Abel pidió que alcanzara "a todo, incluyendo
+   el fondo" — antes la barra lateral y los menús se quedaban neutros). Al
+   redefinir las variables en el propio #modo-lectura, cualquier hijo que ya
+   las use (barra lateral, menús flotantes, reproductor de voz, botones...)
+   se pinta cálido solo, sin tocarlo uno por uno — mismo principio que el
+   tema oscuro en :root[data-tema="oscuro"]. Ojo con un detalle de CSS: esto
+   SOLO alcanza a elementos que declaran su propio "color: var(--algo)" —
+   heredar un color ya calculado más arriba (como #lectura-titulo, que no
+   declara color propio) no vuelve a leer la variable, por eso esos dos
+   siguen necesitando su línea aparte, abajo. */
+#modo-lectura.calido {
+  --superficie: #ede0c8;
+  --superficie-fuerte: #f3e9d4;
+  --borde: rgba(74, 55, 40, 0.15);
+  --texto: #4a3728;
+  --texto-secundario: #6b5847;
+  --texto-terciario: #8a765f;
+  --texto-solido: #4a3728;
+  --accent-texto: #96632f;
+  --accent-fondo: rgba(150, 99, 47, 0.12);
+  background: var(--superficie);
 }
-#modo-lectura.calido .contenido-articulo a { color: #96632f; }
 #modo-lectura.calido #lectura-titulo,
-#modo-lectura.calido .nombre-fuente { color: #4a3728; }
+#modo-lectura.calido .nombre-fuente { color: var(--texto); }
+
+/* El body (fuera de los 960px, en ventanas anchas) no es descendiente de
+   #modo-lectura, así que no hereda las variables de arriba — se pinta
+   aparte con :has(), igual que el candado de scroll de Configuración,
+   para que el Mica neutro no se asome en los márgenes mientras se lee en
+   cálido. */
+body:has(#modo-lectura.calido:not(.oculto)) {
+  background: #ede0c8;
+  transition: background 0.4s ease;
+}
 
 body {
   margin: 0;
@@ -387,9 +414,13 @@ h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.2px; }
   100% { background-position: 400px 0; }
 }
 
-.tarjeta-skeleton {
-  height: 92px;
-  border-radius: var(--radio-grande);
+/* Compartido por la tarjeta de noticia y el esqueleto del artículo (abajo)
+   — la animación y el degradado son siempre los mismos, solo cambia el
+   tamaño/forma de cada bloque. */
+.tarjeta-skeleton,
+.skeleton-titulo,
+.skeleton-imagen,
+.skeleton-linea {
   background: linear-gradient(
     90deg,
     rgba(0, 0, 0, 0.04) 25%,
@@ -399,6 +430,39 @@ h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.2px; }
   background-size: 400px 100%;
   animation: brillo-skeleton 1.4s linear infinite;
 }
+
+.tarjeta-skeleton { height: 92px; border-radius: var(--radio-grande); }
+
+/* Esqueleto del artículo en modo lectura, mientras carga (ver
+   abrirModoLectura en renderer.js): dos barras donde va el título (dentro
+   de #lectura-titulo) y, debajo, una silueta de portada + párrafos donde
+   va #lectura-contenido — mismo espíritu que .tarjeta-skeleton, para no
+   pasar de "noticias con brillo" a un simple texto de "Cargando" al entrar
+   a un artículo. */
+.skeleton-titulo {
+  display: block;
+  height: 24px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+.skeleton-titulo:first-child { width: 85%; }
+.skeleton-titulo:last-child { width: 55%; margin-bottom: 0; }
+
+.skeleton-imagen {
+  display: block;
+  height: 280px;
+  border-radius: var(--radio);
+  margin: 16px 0;
+}
+
+.skeleton-linea {
+  display: block;
+  height: 15px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+.skeleton-linea:nth-child(odd) { width: 97%; }
+.skeleton-linea:nth-child(even) { width: 89%; }
 
 /* Animación de entrada: aparecen con un ligero deslizamiento hacia arriba,
    en cascada (el retraso de cada tarjeta lo calcula renderer.js). */
@@ -781,6 +845,35 @@ h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.2px; }
 
 /* Reproductor de la lectura en voz alta: flota abajo al centro del panel
    (el panel es position: relative), por encima del artículo que se desplaza. */
+/* Aviso flotante de confirmación (ver mostrarAvisoFlotante en renderer.js).
+   position: fixed a nivel de body (no vive dentro de ningún panel con
+   backdrop-filter), así que se posiciona contra la ventana sin el problema
+   de recorte que describe el comentario de #pildora-seleccion. */
+.aviso-flotante {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translate(-50%, 8px);
+  z-index: 40;
+  padding: 10px 18px;
+  background: var(--superficie-fuerte);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  color: var(--texto-solido);
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+.aviso-flotante.visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
 .reproductor-voz {
   position: absolute;
   bottom: 16px;
@@ -900,11 +993,11 @@ h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.2px; }
    descendiente. Se excluye el modo cálido de lectura a propósito en el
    panel/encabezado: son dos tratamientos de fondo que no deben
    mezclarse (ver la sección "Modo cálido de lectura" arriba). */
-html.con-tinte[data-tema="claro"] body {
+html.con-tinte[data-tema="claro"] body:not(:has(#modo-lectura.calido)) {
   background: color-mix(in srgb, var(--tinte-color) 10%, transparent);
   transition: background 0.4s ease;
 }
-html.con-tinte[data-tema="claro"] #modo-lectura {
+html.con-tinte[data-tema="claro"] #modo-lectura:not(.calido) {
   /* Sin esto, el espacio de 16px entre la barra lateral y el panel se
      queda en el tinte más tenue del body en vez de acompañar el resto
      — se nota como una rendija apagada entre dos cajas de color. */
@@ -912,8 +1005,8 @@ html.con-tinte[data-tema="claro"] #modo-lectura {
   border-radius: var(--radio-grande);
   transition: background 0.4s ease;
 }
-html.con-tinte[data-tema="claro"] .barra-lateral,
-html.con-tinte[data-tema="claro"] .cabecera-barra {
+html.con-tinte[data-tema="claro"] #modo-lectura:not(.calido) .barra-lateral,
+html.con-tinte[data-tema="claro"] #modo-lectura:not(.calido) .cabecera-barra {
   background: color-mix(in srgb, var(--tinte-color) 16%, var(--superficie));
   transition: background 0.4s ease;
 }

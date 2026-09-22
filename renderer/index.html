@@ -476,6 +476,11 @@
 
 </div>
 
+<!-- Aviso flotante de confirmación ("Enlace copiado", etc.) — genérico, a
+     nivel de body para poder usarse desde cualquier pantalla, no solo el
+     modo lectura. Ver mostrarAvisoFlotante() en renderer.js. -->
+<div id="aviso-flotante" class="aviso-flotante" role="status" aria-live="polite"></div>
+
 <!-- Botón para cerrar el panel de búsqueda con IA (ver src/panel-ia.js).
      El panel en sí no es HTML de esta página — es una WebContentsView aparte
      que Electron dibuja encima, por eso el botón para cerrarlo vive acá y no

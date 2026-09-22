@@ -37,6 +37,19 @@ function escaparHtml(texto) {
   }[caracter]));
 }
 
+// Confirmación flotante genérica ("Enlace copiado", etc. — ver #aviso-flotante
+// en index.html). Reentrante: si ya hay un aviso visible y se llama de
+// nuevo, reinicia su propio temporizador en vez de acumular varios a la vez
+// u ocultarse a destiempo.
+let temporizadorAvisoFlotante = null;
+function mostrarAvisoFlotante(texto) {
+  const aviso = document.getElementById('aviso-flotante');
+  aviso.textContent = texto;
+  aviso.classList.add('visible');
+  clearTimeout(temporizadorAvisoFlotante);
+  temporizadorAvisoFlotante = setTimeout(() => aviso.classList.remove('visible'), 1800);
+}
+
 // Pequeña ayuda para las transiciones: espera a que termine una animación
 // CSS antes de conmutar la clase "oculto" (display:none), para que el
 // fade-out se alcance a ver en vez de cortarse de golpe.
@@ -665,8 +678,7 @@ function cerrarMenusFlotantes() {
 }
 
 MENUS_FLOTANTES.forEach(([idBoton, idMenu]) => {
-  document.getElementById(idBoton).addEventListener('click', (evento) => {
-    evento.stopPropagation(); // si no, el listener de "click fuera" de abajo lo cerraría en el mismo clic que lo abre
+  document.getElementById(idBoton).addEventListener('click', () => {
     const menu = document.getElementById(idMenu);
     const yaAbierto = !menu.classList.contains('oculto');
     cerrarMenusFlotantes();
@@ -675,8 +687,14 @@ MENUS_FLOTANTES.forEach(([idBoton, idMenu]) => {
 });
 
 // Un clic en cualquier otro lado de la app cierra el menú que hubiera
-// abierto — el comportamiento normal de cualquier menú desplegable.
-document.addEventListener('click', cerrarMenusFlotantes);
+// abierto — el comportamiento normal de cualquier menú desplegable. Un
+// clic DENTRO de un menú (o en su propio botón) no cuenta como "afuera":
+// sin este filtro, ajustar el tamaño de letra varias veces seguidas cerraba
+// el menú A⁻/A⁺ en cada clic, en vez de dejarlo abierto para seguir
+// probando — justo lo que Abel pidió corregir.
+document.addEventListener('click', (evento) => {
+  if (!evento.target.closest('.menu-flotante-contenedor')) cerrarMenusFlotantes();
+});
 
 // Elegir algo del menú "···" también lo cierra, sin tocar el listener
 // propio de cada botón (guardar-articulo, alternar-calido, etc. siguen
@@ -684,6 +702,16 @@ document.addEventListener('click', cerrarMenusFlotantes);
 document.getElementById('menu-mas-opciones').addEventListener('click', (evento) => {
   if (evento.target.closest('.item-menu-flotante')) cerrarMenusFlotantes();
 });
+
+// Silueta con brillo mientras carga un artículo (mismo lenguaje visual que
+// .tarjeta-skeleton en la lista de noticias — ver styles.css): una portada
+// y unas líneas de texto en vez de dejar el panel en blanco con solo el
+// texto "Cargando artículo…". El número de líneas es arbitrario, solo
+// tiene que alcanzar para llenar la pantalla sin que se note el corte.
+function marcadoEsqueletoArticulo() {
+  const lineas = Array.from({ length: 6 }, () => '<span class="skeleton-linea"></span>').join('');
+  return `<span class="skeleton-imagen"></span>${lineas}`;
+}
 
 async function abrirModoLectura(enlace, forzar = false, direccion = null) {
   const panel = document.getElementById('modo-lectura');
@@ -756,8 +784,8 @@ async function abrirModoLectura(enlace, forzar = false, direccion = null) {
   document.getElementById('encabezado-articulo').classList.remove('oculto-scroll');
   ultimoScrollTop = 0;
 
-  document.getElementById('lectura-titulo').textContent = 'Cargando artículo…';
-  contenido.innerHTML = '';
+  document.getElementById('lectura-titulo').innerHTML = '<span class="skeleton-titulo"></span><span class="skeleton-titulo"></span>';
+  contenido.innerHTML = marcadoEsqueletoArticulo();
   contenido.style.paddingTop = `${document.getElementById('encabezado-articulo').offsetHeight}px`;
   aplicarTinteArticulo(null); // limpio mientras carga — se aplica de nuevo abajo si el artículo nuevo tiene color
 
@@ -1028,13 +1056,18 @@ async function alternarGuardarArticuloActual() {
 
 document.getElementById('guardar-articulo').addEventListener('click', alternarGuardarArticuloActual);
 
-// Compartir: por ahora solo copia el enlace real al portapapeles.
+// Compartir: por ahora solo copia el enlace real al portapapeles. El botón
+// vive dentro del menú "···", que se cierra apenas se elige una opción —
+// así que la única confirmación que de verdad se alcanza a ver es el aviso
+// flotante, no el estado ".guardado" del botón (que igual se queda, por si
+// algún día este botón vuelve a estar siempre visible).
 document.getElementById('compartir-articulo').addEventListener('click', async () => {
   if (!enlaceActual) return;
   await navigator.clipboard.writeText(enlaceActual);
   const boton = document.getElementById('compartir-articulo');
-  boton.classList.add('guardado'); // reutiliza el mismo estilo "activo" como confirmación breve
+  boton.classList.add('guardado');
   setTimeout(() => boton.classList.remove('guardado'), 900);
+  mostrarAvisoFlotante('Enlace copiado');
 });
 
 // Cambia data-tema con la misma transición circular de softzone.es: un
