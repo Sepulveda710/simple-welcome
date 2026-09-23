@@ -29,7 +29,6 @@ const VALORES_POR_DEFECTO = {
   unidadTemperatura: 'celsius', // 'celsius' | 'fahrenheit' — ver clima.js
   caraChiaPredeterminada: 'relajado', // id de EXPRESIONES_CHIA — la cara "de reposo" (los estados contextuales como "triste" la siguen pisando temporalmente)
   iniciarConWindows: true, // abrir la app sola al iniciar sesión en Windows — ver aplicarInicioConWindows en main.js (solo aplica en la versión instalada)
-  companeraChiaAncho: 200, // px — ancho del panel de Chía al leer en voz alta; se cambia arrastrando su esquina (ver #companera-chia en styles.css)
   escalaTextoLectura: 0, // "pasos" desde el tamaño base del texto en modo lectura (0 = tamaño normal) — ver PASO_TEXTO en renderer.js
   vozNombre: '', // nombre exacto de la voz de Windows para leer noticias ('' = la primera en español) — ver renderer/lector-voz.js
   vozVelocidad: 1, // 0.8 a 2 — velocidad de la lectura en voz alta

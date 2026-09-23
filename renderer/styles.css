@@ -874,39 +874,35 @@ h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.2px; }
   transform: translate(-50%, 0);
 }
 
-/* Ya no es una píldora flotante propia — vive dentro de .companera-chia
-   (ver más abajo), así que aquí solo es el envoltorio de sus botones; el
-   fondo/blur/sombra de tarjeta los pone el panel que la contiene.
-   Cuadrícula fija de 3 columnas (no flex-wrap) a propósito — Abel pidió
-   "más estética la distribución": con flex-wrap el número de botones por
-   fila cambiaba según el ancho del panel (a veces 4+2, a veces 3+3), acá
-   siempre son 2 filas parejas de 3, sin importar el ancho. El orden en el
-   HTML ya cae bien: anterior/pausa/siguiente arriba,
-   velocidad/progreso/detener abajo. */
+/* Reproductor de la lectura en voz alta: vuelve a ser una píldora flotante
+   simple dentro del artículo, como al principio (2026-09-22 — tras probar
+   una ventana flotante grande aparte para Chía, con arrastre de tamaño y
+   acople automático en ventanas angostas, Abel prefirió la barra sencilla
+   de siempre; ver el historial en este archivo si algún día se retoma la
+   idea del panel grande). Ahora integra la cara de Chía al inicio (ver
+   .avatar-companera-chia abajo), en vez de vivir aparte. */
 .reproductor-voz {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  width: 100%;
-  padding-top: 12px;
-  border-top: 1px solid var(--borde);
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--superficie-fuerte);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
-/* .oculto (display: none) es más débil que el display: flex/grid de arriba
-   y de .boton-nav — sin esto la clase se agrega pero el elemento sigue
-   visible. */
+/* .oculto (display: none) es más débil que el display: flex de arriba y de
+   .boton-nav — sin esto la clase se agrega pero el elemento sigue visible. */
 .reproductor-voz.oculto,
 .boton-nav.oculto { display: none; }
-/* Tamaño fijo, NO ligado a --ancho-companera (ver la nota arriba de
-   .cara-companera-chia) — botones chicos y consistentes sea cual sea el
-   tamaño del panel. */
-.reproductor-voz .boton-nav {
-  border-radius: 999px;
-  width: 32px;
-  height: 32px;
-  min-width: 0;
-  padding: 0;
-  justify-self: center;
-}
+.reproductor-voz .boton-nav { border-radius: 999px; min-width: 32px; justify-content: center; }
 .reproductor-voz .boton-voz-principal {
   color: var(--accent-texto);
   border-color: var(--accent);
@@ -920,28 +916,6 @@ h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.2px; }
   background: currentColor;
   border-radius: 2px;
 }
-.reproductor-voz .voz-progreso { justify-self: center; align-self: center; }
-
-/* Cerrar el reproductor: separado del resto a propósito (Abel lo pidió
-   aparte del grupo de íconos, no mezclado) — círculo propio debajo de todo,
-   con su propia línea divisoria arriba. */
-.boton-cerrar-companera-chia {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 30px;
-  padding-top: 10px;
-  border: none;
-  border-top: 1px solid var(--borde);
-  background: none;
-  color: var(--texto-secundario);
-  cursor: pointer;
-  transition: color 0.12s ease;
-}
-.boton-cerrar-companera-chia:hover { color: var(--texto); }
-.boton-cerrar-companera-chia .icono-fluent { font-size: 14px; }
-
 .voz-progreso {
   font-size: 12px;
   color: var(--texto-solido);
@@ -950,109 +924,29 @@ h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.2px; }
   font-variant-numeric: tabular-nums;
 }
 
-/* Compañera de Chía durante la lectura en voz alta (2026-09-21; ajustado
-   otra vez tras verla en la app: Abel pidió que NO le quitara ancho al
-   artículo, así que pasó de "panel de la fila" a ventana flotante de
-   verdad — position:fixed, igual que #pildora-seleccion, por la misma
-   razón: si viviera dentro de .panel-articulo, su backdrop-filter +
-   overflow:hidden recortarían/reposicionarían un position:fixed contra el
-   panel en vez de contra la ventana. El reproductor de voz ahora vive
-   DENTRO de este panel, debajo de la cara — ver .reproductor-voz arriba. */
+/* Chía integrada en el reproductor: un avatar circular chico al inicio de
+   la píldora, con la boca animada mientras suena la voz de verdad (ver
+   companeraChiaAlCambiarEstado en renderer.js) y congelada en pausa. */
+.avatar-companera-chia {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--accent-fondo);
+  flex-shrink: 0;
+}
 .cara-companera-chia {
   font-family: "Cascadia Code", "Consolas", monospace;
   margin: 0;
   white-space: pre;
   color: var(--accent-texto);
+  font-size: 7px;
 }
 
-/* Tamaño arrastrable (2026-09-21, reemplaza al selector de 3 tamaños fijos
-   de antes — Abel pidió poder cambiarlo "a mano con el mouse, como una
-   ventana"): TODO cuelga de una sola variable, --ancho-companera, que
-   arrastrarCompaneraChia() en renderer.js actualiza en vivo mientras
-   arrastras #asa-companera-chia — así la cara, la onda y los botones
-   escalan juntos, proporcionales, en vez de saltar entre 3 tamaños fijos.
-   200px es el valor por defecto (VALORES_POR_DEFECTO.companeraChiaAncho en
-   src/configuracion.js). */
-.companera-chia {
-  position: fixed;
-  top: 20px; /* mismo margen que "padding: 20px" del body — alinea su borde de arriba con el del artículo */
-  right: 24px;
-  z-index: 6;
-  width: var(--ancho-companera, 200px);
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-  padding: 16px 14px;
-  background: var(--superficie-fuerte);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio-grande);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
-}
-.companera-chia.oculto { display: none; }
-.companera-chia:not(.oculto) { display: flex; }
-
-/* Modo "acoplada" (2026-09-22, pedido de Abel: que se ajuste solo con la
-   ventana, y que no se monte sobre el artículo cuando la ventana está muy
-   angosta): ajustarCompaneraChiaAlEspacio() en renderer.js la agrega cuando
-   ya no hay hueco para flotar sin tapar el texto. Deja de flotar (vuelve a
-   ser un hijo normal del flex de #modo-lectura, como la barra lateral) —
-   panel-articulo se angosta solo para hacerle lugar, en vez de que se le
-   monte encima. El gap de 16px entre paneles de #modo-lectura ya separa
-   esto de panel-articulo sin agregar nada aparte. */
-.companera-chia.acoplada {
-  position: static;
-  flex-shrink: 0;
-}
-.companera-chia.acoplada .asa-companera-chia { display: none; }
-
-/* Solo la cara y la onda escalan con el ancho — los botones NO: crecer al
-   mismo ritmo que el panel los volvía enormes y desproporcionados apenas
-   Abel agrandaba un poco la ventana (Abel lo pidió corregir, 2026-09-22).
-   Se quedan en un tamaño cómodo fijo, igual de chico sea el panel grande o
-   chico. */
-.cara-companera-chia { font-size: calc(var(--ancho-companera, 200px) * 0.13); }
-.onda-companera-chia { height: calc(var(--ancho-companera, 200px) * 0.15); }
-
-/* Esquina inferior izquierda a propósito: el panel está anclado por la
-   DERECHA (right: 24px fijo), así que arrastrar hacia la izquierda es lo
-   que "agranda la ventana" sin que se salga de la pantalla por el otro
-   lado. Solo cambia el ancho (alto y el resto ya escalan con él vía las
-   variables de arriba) — por eso el cursor es ew-resize, no nwse-resize. */
-.asa-companera-chia {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 18px;
-  height: 18px;
-  cursor: ew-resize;
-  border-bottom: 2px solid var(--texto-terciario);
-  border-left: 2px solid var(--texto-terciario);
-  border-radius: 0 0 0 6px;
-  opacity: 0.5;
-  transition: opacity 0.12s ease;
-}
-.asa-companera-chia:hover { opacity: 1; }
-
-.onda-companera-chia { display: flex; align-items: flex-end; gap: 3px; }
-.onda-companera-chia span {
-  width: 4px;
-  border-radius: 1px;
-  background: var(--accent);
-  animation: onda-companera-chia 0.9s ease-in-out infinite;
-}
-.onda-companera-chia span:nth-child(1) { height: 40%; animation-delay: 0s; }
-.onda-companera-chia span:nth-child(2) { height: 100%; animation-delay: 0.1s; }
-.onda-companera-chia span:nth-child(3) { height: 60%; animation-delay: 0.2s; }
-.onda-companera-chia span:nth-child(4) { height: 90%; animation-delay: 0.3s; }
-.onda-companera-chia span:nth-child(5) { height: 50%; animation-delay: 0.4s; }
-@keyframes onda-companera-chia {
-  0%, 100% { transform: scaleY(0.4); }
-  50% { transform: scaleY(1); }
-}
-/* Pausada, la onda se queda quieta en vez de seguir "hablando" sin sonido. */
-#modo-lectura:not(.leyendo) .onda-companera-chia span { animation-play-state: paused; }
+/* Espacio extra al final para que el reproductor no tape el último párrafo */
+.contenido-articulo.con-reproductor { padding-bottom: 90px; }
 
 /* Párrafo que se está leyendo en voz alta */
 .contenido-articulo .leyendo-ahora {

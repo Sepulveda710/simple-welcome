@@ -161,22 +161,15 @@
         <div id="lectura-contenido" class="contenido-articulo"></div>
       </div>
 
-    </div>
-
-    <!-- Compañera de Chía: ventana flotante a la derecha mientras suena la
-         lectura en voz alta — position:fixed (ver el comentario de
-         #pildora-seleccion más abajo sobre por qué esto tiene que vivir
-         fuera de .panel-articulo), así NO le quita ancho al artículo ni lo
-         empuja. El reproductor de voz (ver lector-voz.js) vive DENTRO de
-         este panel, debajo de la cara — ya no es una píldora aparte
-         flotando sobre el artículo. Tamaño ajustable arrastrando
-         #asa-companera-chia con el mouse, como una ventana real — ver
-         iniciarArrastreCompaneraChia en renderer.js. -->
-    <div id="companera-chia" class="companera-chia oculto">
-      <div id="asa-companera-chia" class="asa-companera-chia" title="Arrastra para cambiar el tamaño (doble clic para restablecer)"></div>
-      <pre class="cara-companera-chia" aria-hidden="true"></pre>
-      <div class="onda-companera-chia"><span></span><span></span><span></span><span></span><span></span></div>
+      <!-- Reproductor de la lectura en voz alta (ver lector-voz.js). Va
+           dentro del panel pero fuera de .area-scroll para quedarse fijo
+           abajo mientras el artículo se desplaza — como al principio;
+           después de probar una ventana flotante grande aparte, Abel
+           prefirió volver a esta barra simple, ahora con la cara de Chía
+           integrada al inicio (su boca se anima mientras suena la voz —
+           ver companeraChiaAlCambiarEstado en renderer.js). -->
       <div id="reproductor-voz" class="reproductor-voz oculto" role="region" aria-label="Lectura en voz alta">
+        <span class="avatar-companera-chia" aria-hidden="true"><pre class="cara-companera-chia"></pre></span>
         <button id="voz-anterior" class="boton-nav" title="Párrafo anterior"><i class="icono-fluent" aria-hidden="true">&#xE892;</i></button>
         <button id="voz-pausa" class="boton-nav boton-voz-principal" title="Pausar"><i class="icono-fluent" id="icono-voz-pausa" aria-hidden="true">&#xE769;</i></button>
         <button id="voz-siguiente" class="boton-nav" title="Párrafo siguiente"><i class="icono-fluent" aria-hidden="true">&#xE893;</i></button>
@@ -187,11 +180,8 @@
              mal) — un cuadrado dibujado con CSS es más limpio y consistente
              que perseguir otro glifo de la fuente. -->
         <button id="voz-detener" class="boton-nav" title="Detener (vuelve al inicio)"><span class="icono-cuadrado-detener" aria-hidden="true"></span></button>
+        <button id="voz-cerrar" class="boton-nav" title="Cerrar el reproductor"><i class="icono-fluent" aria-hidden="true">&#xE711;</i></button>
       </div>
-      <!-- Aparte del resto (Abel lo pidió separado, no mezclado con los
-           demás íconos) — se oculta igual que todo lo demás porque cuelga
-           del mismo #companera-chia.oculto, no necesita su propio toggle. -->
-      <button id="voz-cerrar" class="boton-cerrar-companera-chia" title="Cerrar el reproductor" type="button"><i class="icono-fluent" aria-hidden="true">&#xE711;</i></button>
     </div>
 
     <!-- Fuera de .panel-articulo a propósito: ese panel tiene backdrop-filter
@@ -327,12 +317,6 @@
             <span>Cara predeterminada</span>
             <div id="selector-caras-chia" class="selector-caras-chia"></div>
           </div>
-
-          <p class="ayuda-comentarios">
-            El tamaño del panel de Chía al leer en voz alta se ajusta
-            arrastrando su esquina, como una ventana — doble clic en la
-            esquina para volver al tamaño normal.
-          </p>
         </section>
 
         <section class="seccion-configuracion oculto" data-seccion="voz">
