@@ -2097,6 +2097,113 @@ async function guardarFormularioFuente() {
   pintarNoticias(); // vuelve a descargar: refleja al instante la fuente nueva o los cambios
 }
 
+// --- Compartir fuentes: exportar a un archivo / importar desde uno ---
+// (mismo archivo .fuenteslumina, ver EXTENSION_FUENTES en main.js — la
+// interfaz nunca toca el disco directamente, todo pasa por IPC)
+
+function mostrarAvisoCompartirFuentes(texto, esError = false) {
+  const aviso = document.getElementById('aviso-compartir-fuentes');
+  aviso.textContent = texto;
+  aviso.classList.toggle('oculto', !texto);
+  aviso.classList.toggle('error', esError);
+}
+
+document.getElementById('exportar-fuentes').addEventListener('click', async () => {
+  const resultado = await window.api.exportarFuentes();
+  if (resultado.cancelado) return;
+  mostrarAvisoCompartirFuentes(
+    resultado.ok ? `Guardado en ${resultado.ruta}` : (resultado.error || 'No se pudo exportar.'),
+    !resultado.ok
+  );
+});
+
+// Candidatas actualmente mostradas en el diálogo de importación (las que
+// vinieron de prepararImportacion en main.js) — se filtran por el
+// interruptor de cada tarjeta antes de mandarlas a confirmar.
+let candidatasImportarFuentes = [];
+
+function abrirDialogoImportarFuentes(resultado) {
+  if (!resultado.ok) {
+    mostrarAvisoCompartirFuentes(resultado.error || 'No se pudo leer el archivo.', true);
+    return;
+  }
+
+  candidatasImportarFuentes = resultado.nuevas;
+  const mensaje = document.getElementById('mensaje-importar-fuentes');
+  const lista = document.getElementById('lista-importar-fuentes');
+  lista.innerHTML = '';
+
+  if (resultado.nuevas.length === 0) {
+    mensaje.textContent = resultado.repetidas > 0
+      ? `Ya tienes las ${resultado.repetidas} fuente(s) de este archivo — no hay nada nuevo que agregar.`
+      : 'Este archivo no tiene fuentes para agregar.';
+    document.getElementById('confirmar-importar-fuentes').disabled = true;
+  } else {
+    mensaje.textContent = resultado.repetidas > 0
+      ? `${resultado.nuevas.length} fuente(s) nueva(s) (${resultado.repetidas} ya las tenías, no aparecen aquí). Elige cuáles agregar:`
+      : `${resultado.nuevas.length} fuente(s) encontradas. Elige cuáles agregar:`;
+    document.getElementById('confirmar-importar-fuentes').disabled = false;
+
+    resultado.nuevas.forEach((fuente, indice) => {
+      const item = document.createElement('div');
+      item.className = 'item-importar-fuente';
+      item.style.setProperty('--source-color', fuente.color || 'var(--accent)');
+      item.innerHTML = `
+        <img class="favicon-item-fuente" src="${urlFavicon(fuente.url)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+        <span class="info-importar-fuente">
+          <span class="nombre-item-fuente">${escaparHtml(fuente.nombre)}</span>
+          <span class="categoria-item-fuente">${escaparHtml(fuente.categoria)}</span>
+        </span>
+        <span class="interruptor" title="Agregar esta fuente">
+          <input type="checkbox" class="interruptor-importar-fuente" data-indice="${indice}" checked />
+          <span class="interruptor-riel"></span>
+        </span>
+      `;
+      lista.appendChild(item);
+    });
+  }
+
+  abrirCapaModal('capa-importar-fuentes', 'contenido-importar-fuentes');
+}
+
+document.getElementById('importar-fuentes').addEventListener('click', async () => {
+  const resultado = await window.api.importarFuentesDesdeDialogo();
+  if (resultado.cancelado) return;
+  abrirDialogoImportarFuentes(resultado);
+});
+
+// El mismo diálogo se usa cuando Lumina detecta un .fuenteslumina por
+// doble clic (con la app cerrada o ya abierta) — main.js ya lo validó.
+window.api.alDetectarArchivoFuentes((resultado) => abrirDialogoImportarFuentes(resultado));
+
+document.getElementById('confirmar-importar-fuentes').addEventListener('click', async () => {
+  const seleccionadas = [...document.querySelectorAll('.interruptor-importar-fuente:checked')]
+    .map((input) => candidatasImportarFuentes[Number(input.dataset.indice)]);
+
+  if (seleccionadas.length === 0) {
+    cerrarCapaModal('capa-importar-fuentes', 'contenido-importar-fuentes');
+    return;
+  }
+
+  const resultado = await window.api.confirmarImportacionFuentes(seleccionadas);
+  await cerrarCapaModal('capa-importar-fuentes', 'contenido-importar-fuentes');
+  mostrarAvisoCompartirFuentes(
+    resultado.errores.length > 0
+      ? `Se agregaron ${resultado.agregadas} fuente(s); ${resultado.errores.length} fallaron: ${resultado.errores.join(', ')}`
+      : `Se agregaron ${resultado.agregadas} fuente(s).`,
+    resultado.errores.length > 0 && resultado.agregadas === 0
+  );
+  await pintarListaFuentes();
+  pintarNoticias();
+});
+
+document.getElementById('cancelar-importar-fuentes').addEventListener('click', () => {
+  cerrarCapaModal('capa-importar-fuentes', 'contenido-importar-fuentes');
+});
+document.getElementById('cerrar-importar-fuentes').addEventListener('click', () => {
+  cerrarCapaModal('capa-importar-fuentes', 'contenido-importar-fuentes');
+});
+
 document.getElementById('abrir-configuracion').addEventListener('click', abrirConfiguracion);
 document.getElementById('cerrar-configuracion').addEventListener('click', cerrarConfiguracion);
 document.getElementById('restablecer-leidos').addEventListener('click', restablecerEstadoLectura);
@@ -2160,6 +2267,8 @@ document.addEventListener('keydown', (evento) => {
       cerrarCapaModal('capa-guardados', 'contenido-guardados');
     } else if (!document.getElementById('capa-fuentes').classList.contains('oculto')) {
       cerrarCapaModal('capa-fuentes', 'contenido-fuentes');
+    } else if (!document.getElementById('capa-importar-fuentes').classList.contains('oculto')) {
+      cerrarCapaModal('capa-importar-fuentes', 'contenido-importar-fuentes');
     } else if (!document.getElementById('capa-ayuda-atajos').classList.contains('oculto')) {
       cerrarCapaModal('capa-ayuda-atajos', 'contenido-ayuda-atajos');
     } else if (enCampoTexto) {

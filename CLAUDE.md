@@ -875,3 +875,71 @@ reducirlo a 32/16px se veía legible igual, sin falta de simplificarlo más
   hasta 32px; a 16px pierde el detalle como cualquier ícono con texto (no
   se hizo un segundo arte para ese tamaño, no vale la pena con
   electron-builder generando el `.ico` a partir de un solo PNG).
+
+**Compartir listas de fuentes (exportar/importar/doble clic) — misma
+rama `lanzamiento-lumina` (2026-09-22).** Abel usa fuentes distintas en
+la instalación real vs. la de pruebas y quería una forma fácil de
+compartir su lista completa con otra persona (o consigo mismo entre
+instalaciones) — pidió exportar/importar Y que abrir un archivo
+compartido (doble clic, con la app abierta o cerrada) detecte las
+fuentes y deje elegir cuáles agregar con toggles, sin agregarlas solas.
+
+- **`src/gestion-fuentes.js`** gana tres funciones: `exportarFuentes()`
+  (solo nombre/url/categoria/color — a propósito SIN `activa`, quien
+  recibe el archivo decide si la quiere encendida, no hereda tu estado),
+  `prepararImportacion(contenidoCrudo)` (valida el JSON, dedupea por URL
+  dentro del propio archivo, y separa "nuevas" de "repetidas" comparando
+  contra lo que ya tienes — nunca lanza, siempre `{ok, ...}`) e
+  `importarFuentes(seleccionadas)` (agrega lo que el usuario eligió,
+  válida cada una por su cuenta con `validarFuente` para no perder toda
+  la tanda por un dato mal escrito, y salta en silencio — sin contarlo
+  como error — cualquier URL que ya esté guardada, incluida entre las
+  propias seleccionadas de esa tanda).
+- **Extensión de archivo propia: `.fuenteslumina`** (JSON plano por
+  dentro, mismo formato que `exportarFuentes()`) — registrada en
+  `package.json` → `build.fileAssociations` para que Windows la asocie
+  con Lumina. `main.js` tiene `EXTENSION_FUENTES`, `extraerRutaDeFuentes(argv)`
+  (busca ese sufijo en cualquier argv, no por posición — con `npm start`
+  el propio "." de electron también viaja en argv) y
+  `manejarArchivoDeFuentes(ruta)` (lee+valida y manda el resultado a la
+  interfaz por `fuentes-detectadas-por-archivo`, esperando a
+  `did-finish-load` si la ventana recién está arrancando).
+- **`app.requestSingleInstanceLock()`**, nuevo en esta sesión — sin esto,
+  un SEGUNDO doble clic en un `.fuenteslumina` mientras Lumina ya está
+  abierta abriría una instancia aparte en vez de avisarle a la que ya
+  existe. Casi todo el arranque (`app.whenReady()`, `window-all-closed`)
+  quedó envuelto en `if (bloqueoInstanciaUnica) { ... }` para que la
+  instancia que PIERDE el candado nunca llegue a crear ventana — solo
+  llama `app.quit()` y sale. El archivo llega por dos caminos distintos
+  según el momento: `process.argv` en el primer arranque (la app no
+  estaba corriendo) o el evento `'second-instance'` (ya estaba abierta).
+- **Interfaz** (`renderer/index.html` + `renderer.js`): botones
+  "Exportar"/"Importar" junto a "+ Agregar fuente" en Configuración >
+  Fuentes, y un modal nuevo (`#capa-importar-fuentes`, mismo patrón
+  `capa-configuracion` que Guardados/Ver-por-fuente/Ayuda — hereda solo
+  el bloqueo de scroll de fondo y las animaciones de entrada/salida sin
+  escribir nada nuevo para eso) con una tarjeta por fuente candidata y un
+  interruptor (`.interruptor`, el mismo componente que ya existía) para
+  elegir cuáles entran. `abrirDialogoImportarFuentes(resultado)` es la
+  MISMA función tanto si el usuario pidió importar a mano
+  (`window.api.importarFuentesDesdeDialogo()`, con diálogo nativo) como
+  si Lumina detectó un archivo solo (`window.api.alDetectarArchivoFuentes`,
+  el listener del evento de arriba) — un solo camino de UI para los dos
+  casos. Se agregó al mismo bloque de Escape que ya cierra las demás
+  capas modales.
+- **Qué se probó** (inyectando JS temporalmente en `main.js`, con
+  `app.setPath('userData', ...)` aislado, quitado después de confirmar):
+  `prepararImportacion` distingue nuevas de repetidas y dedupea dentro
+  del propio archivo; `importarFuentes` agrega la primera vez y no
+  duplica ni cuenta errores en una segunda pasada con las mismas
+  candidatas; `exportarFuentes()` no incluye `activa`; el flujo completo
+  de "detectar archivo → abre el modal → clic en Confirmar → IPC real →
+  la fuente queda guardada" funciona de punta a punta simulando un
+  argv con extensión `.fuenteslumina`; Escape cierra el modal; y los
+  diálogos nativos de exportar/importar (`dialog.showSaveDialog`/
+  `showOpenDialog`, sustituidos temporalmente por una versión que
+  resuelve sola para la prueba) escriben y leen el archivo real en
+  disco correctamente. Lo único que NO se pudo probar aquí es el doble
+  clic real de Windows sobre un `.fuenteslumina` con la app empaquetada
+  (la asociación de archivo solo se activa de verdad con un instalador
+  real, no con `npm start`) — verificarlo cuando Abel instale la 6.0.

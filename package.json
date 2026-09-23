@@ -36,6 +36,14 @@
       "target": "nsis",
       "icon": "assets/icono.png"
     },
+    "fileAssociations": [
+      {
+        "ext": "fuenteslumina",
+        "name": "Lista de fuentes de Lumina",
+        "description": "Lista de fuentes de noticias para compartir en Lumina",
+        "icon": "assets/icono.png"
+      }
+    ],
     "nsis": {
       "oneClick": false,
       "perMachine": false,

@@ -1583,6 +1583,39 @@ html:has(.capa-configuracion:not(.oculto)) {
 
 .contenido-guardados { width: 380px; max-height: 70vh; overflow-y: auto; margin: 0; }
 
+/* --- Compartir fuentes (exportar/importar, Configuración > Fuentes) --- */
+.acciones-compartir-fuentes { display: flex; gap: 8px; flex-wrap: wrap; }
+.acciones-compartir-fuentes #abrir-form-fuente { flex: 1; }
+
+.aviso-compartir-fuentes {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--texto-secundario);
+}
+.aviso-compartir-fuentes.error { color: #c62828; }
+
+#contenido-importar-fuentes { width: 420px; }
+.mensaje-importar-fuentes { font-size: 13px; color: var(--texto-secundario); margin: 0 0 10px; }
+
+/* Mismo lenguaje visual que .item-fuente, pero con un interruptor de
+   selección en vez de editar/eliminar — acá no se está gestionando una
+   fuente ya guardada, se está eligiendo cuáles agregar. */
+.item-importar-fuente {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  padding: 10px;
+  background: var(--superficie-fuerte);
+  border: 1px solid var(--borde);
+  border-top: 3px solid var(--source-color, var(--accent));
+  border-radius: var(--radio);
+}
+.item-importar-fuente .favicon-item-fuente { width: 18px; height: 18px; border-radius: 4px; flex-shrink: 0; }
+.info-importar-fuente { flex: 1; min-width: 0; }
+.info-importar-fuente .nombre-item-fuente { display: block; }
+.info-importar-fuente .categoria-item-fuente { display: block; margin-top: 2px; }
+
 /* --- Ver por fuente --- */
 
 .grid-fuentes {

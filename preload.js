@@ -30,6 +30,13 @@ contextBridge.exposeInMainWorld('api', {
   editarFuente: (urlOriginal, cambios) => ipcRenderer.invoke('editar-fuente', urlOriginal, cambios),
   eliminarFuente: (url) => ipcRenderer.invoke('eliminar-fuente', url),
   alternarFuenteActiva: (url) => ipcRenderer.invoke('alternar-fuente-activa', url),
+  exportarFuentes: () => ipcRenderer.invoke('exportar-fuentes'),
+  importarFuentesDesdeDialogo: () => ipcRenderer.invoke('importar-fuentes-desde-dialogo'),
+  confirmarImportacionFuentes: (seleccionadas) => ipcRenderer.invoke('confirmar-importacion-fuentes', seleccionadas),
+  // Doble clic en un archivo .fuenteslumina (con Lumina cerrada o ya
+  // abierta) — main.js valida el archivo y manda el resultado aquí, listo
+  // para pintar el mismo diálogo de importación que el botón manual.
+  alDetectarArchivoFuentes: (callback) => ipcRenderer.on('fuentes-detectadas-por-archivo', (_evento, resultado) => callback(resultado)),
   restablecerConfiguracion: () => ipcRenderer.invoke('restablecer-configuracion'),
   obtenerVersionApp: () => ipcRenderer.invoke('obtener-version-app'),
   obtenerGuardados: () => ipcRenderer.invoke('obtener-guardados'),

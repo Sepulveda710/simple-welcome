@@ -125,4 +125,83 @@ function alternarFuenteActiva(url) {
   return fuentes;
 }
 
-module.exports = { obtenerFuentes, agregarFuente, editarFuente, eliminarFuente, alternarFuenteActiva };
+// --- Compartir listas de fuentes (exportar/importar) ---
+
+// Solo estos 4 campos son "compartibles" — a propósito NO incluye
+// "activa": quien reciba el archivo decide si la quiere encendida o
+// apagada, no hereda el estado que tenía en la PC de quien la compartió.
+function exportarFuentes() {
+  return obtenerFuentes().map(({ nombre, url, categoria, color }) => ({ nombre, url, categoria, color }));
+}
+
+// Lee el contenido crudo de un archivo de fuentes (ya como texto, no como
+// ruta — quien llama decide si viene de un diálogo o de un doble clic) y
+// separa lo reconocible en "nuevas" (por agregar) vs. ya existentes por
+// URL — la interfaz solo deja elegir entre las nuevas. Nunca lanza: un
+// archivo mal formado o vacío es un resultado { ok:false }, no una
+// excepción cruzando IPC.
+function prepararImportacion(contenidoCrudo) {
+  let lista;
+  try {
+    lista = JSON.parse(contenidoCrudo);
+  } catch {
+    return { ok: false, error: 'El archivo no es una lista de fuentes válida.' };
+  }
+  if (!Array.isArray(lista)) return { ok: false, error: 'El archivo no es una lista de fuentes válida.' };
+
+  const reconocidas = lista.filter((f) => f && typeof f.nombre === 'string' && typeof f.url === 'string');
+  if (reconocidas.length === 0) return { ok: false, error: 'El archivo no tiene fuentes reconocibles.' };
+
+  // Por si el propio archivo trae la misma URL dos veces — se queda con
+  // la primera aparición antes de comparar contra lo que ya tienes.
+  const vistas = new Set();
+  const sinRepetirEnElArchivo = reconocidas.filter((f) => {
+    const url = String(f.url).trim();
+    if (vistas.has(url)) return false;
+    vistas.add(url);
+    return true;
+  });
+
+  const existentes = new Set(obtenerFuentes().map((f) => f.url));
+  const candidatas = sinRepetirEnElArchivo.map((f) => normalizarFuente({ categoria: 'General', ...f }));
+  const nuevas = candidatas.filter((f) => !existentes.has(f.url));
+
+  return { ok: true, nuevas, repetidas: candidatas.length - nuevas.length };
+}
+
+// Agrega las fuentes que el usuario eligió en el diálogo de importación
+// (ya vienen filtradas de duplicadas por prepararImportacion). Valida
+// cada una por su cuenta y sigue con las demás si una falla, en vez de
+// perder toda la selección por un solo dato mal escrito.
+function importarFuentes(seleccionadas) {
+  const fuentes = obtenerFuentes();
+  const urlsEnEstaTanda = new Set(fuentes.map((f) => f.url));
+  let agregadas = 0;
+  const errores = [];
+
+  seleccionadas.forEach((candidata) => {
+    if (urlsEnEstaTanda.has(candidata.url)) return; // ya la agregó una candidata anterior de esta misma tanda
+    const error = validarFuente(candidata);
+    if (error) {
+      errores.push(`${candidata.nombre}: ${error}`);
+      return;
+    }
+    fuentes.push(normalizarFuente({ activa: true, ...candidata }));
+    urlsEnEstaTanda.add(candidata.url);
+    agregadas += 1;
+  });
+
+  guardar(fuentes);
+  return { ok: true, agregadas, errores, fuentes };
+}
+
+module.exports = {
+  obtenerFuentes,
+  agregarFuente,
+  editarFuente,
+  eliminarFuente,
+  alternarFuenteActiva,
+  exportarFuentes,
+  prepararImportacion,
+  importarFuentes
+};

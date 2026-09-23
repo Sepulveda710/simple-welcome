@@ -1,5 +1,6 @@
-const { app, BrowserWindow, ipcMain, shell, Menu, nativeTheme } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, Menu, nativeTheme, dialog } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const { autoUpdater } = require('electron-updater');
 
 // Fija el nombre interno (y con él, dónde vive %APPDATA%\<esto>, la
@@ -24,7 +25,7 @@ const { obtenerConfiguracion, guardarConfiguracion, restablecerConfiguracion } =
 const { obtenerRecordatorios, agregarRecordatorio, eliminarRecordatorio } = require('./src/recordatorios');
 const { obtenerClima, buscarCiudad } = require('./src/clima');
 const { obtenerCitaDelDia } = require('./src/cita');
-const { obtenerFuentes, agregarFuente, editarFuente, eliminarFuente, alternarFuenteActiva } = require('./src/gestion-fuentes');
+const { obtenerFuentes, agregarFuente, editarFuente, eliminarFuente, alternarFuenteActiva, exportarFuentes, prepararImportacion, importarFuentes } = require('./src/gestion-fuentes');
 const { obtenerGuardados, guardarArticulo, eliminarGuardado } = require('./src/guardados');
 const { abrirPanelIA, cerrarPanelIA, reposicionarPanelIA } = require('./src/panel-ia');
 
@@ -35,6 +36,54 @@ const { abrirPanelIA, cerrarPanelIA, reposicionarPanelIA } = require('./src/pane
 Menu.setApplicationMenu(null);
 
 let ventanaPrincipal = null; // referencia para los handlers de IPC del panel-ia, más abajo
+
+// Extensión propia para compartir listas de fuentes (ver package.json →
+// build.fileAssociations): el archivo es JSON plano (mismo formato que
+// devuelve exportarFuentes en gestion-fuentes.js), pero con su propia
+// extensión para que Windows lo asocie con Lumina y lo abra con doble
+// clic en vez de con el editor de texto por defecto.
+const EXTENSION_FUENTES = 'fuenteslumina';
+
+function leerArchivoFuentes(ruta) {
+  try {
+    return prepararImportacion(fs.readFileSync(ruta, 'utf-8'));
+  } catch {
+    return { ok: false, error: 'No se pudo leer el archivo.' };
+  }
+}
+
+// Saca de un argv (de process.argv al arrancar, o del que llega a
+// 'second-instance') la ruta a un archivo de fuentes, si la trae. Windows
+// pasa el archivo con el que se hizo doble clic como argumento suelto; se
+// filtra por extensión (no por posición) porque en "npm start" el propio
+// "." de electron también aparece en argv.
+function extraerRutaDeFuentes(argv) {
+  return argv.find((arg) => arg.toLowerCase().endsWith('.' + EXTENSION_FUENTES)) || null;
+}
+
+// Si hay un archivo detectado, le manda el resultado ya validado a la
+// interfaz para que abra el diálogo de importación — funciona tanto si la
+// ventana ya terminó de cargar (Lumina ya estaba abierta) como si acaba
+// de arrancar (espera a 'did-finish-load' antes de mandarlo).
+function manejarArchivoDeFuentes(ruta) {
+  if (!ruta || !ventanaPrincipal) return;
+  const resultado = leerArchivoFuentes(ruta);
+  const enviar = () => ventanaPrincipal.webContents.send('fuentes-detectadas-por-archivo', resultado);
+  if (ventanaPrincipal.webContents.isLoading()) {
+    ventanaPrincipal.webContents.once('did-finish-load', enviar);
+  } else {
+    enviar();
+  }
+}
+
+// Si Windows abre un SEGUNDO .fuenteslumina mientras Lumina ya está
+// corriendo, no debe abrir una ventana nueva — debe avisarle a la que ya
+// existe (y traerla al frente). Sin este candado, cada doble clic en un
+// archivo mientras la app está abierta abriría una instancia aparte.
+const bloqueoInstanciaUnica = app.requestSingleInstanceLock();
+if (!bloqueoInstanciaUnica) {
+  app.quit();
+}
 
 // Registra (o quita) la app para abrir sola al iniciar sesión en Windows.
 // Solo en la versión instalada: corriendo con "npm start" esto registraría
@@ -133,6 +182,39 @@ ipcMain.handle('agregar-fuente', (_evento, fuente) => agregarFuente(fuente));
 ipcMain.handle('editar-fuente', (_evento, urlOriginal, cambios) => editarFuente(urlOriginal, cambios));
 ipcMain.handle('eliminar-fuente', (_evento, url) => eliminarFuente(url));
 ipcMain.handle('alternar-fuente-activa', (_evento, url) => alternarFuenteActiva(url));
+
+// Compartir listas de fuentes: exportar guarda un archivo con extensión
+// propia (ver EXTENSION_FUENTES arriba); importar lo lee y lo valida sin
+// agregar nada todavía (prepararImportacion), la interfaz decide qué
+// entra de verdad con "confirmar-importacion-fuentes" — mismo patrón de
+// "no agregar hasta que el usuario elija" que el doble clic en un
+// archivo (ver manejarArchivoDeFuentes arriba).
+ipcMain.handle('exportar-fuentes', async () => {
+  if (!ventanaPrincipal) return { ok: false };
+  const { canceled, filePath } = await dialog.showSaveDialog(ventanaPrincipal, {
+    title: 'Exportar mis fuentes de noticias',
+    defaultPath: 'mis-fuentes-lumina.' + EXTENSION_FUENTES,
+    filters: [{ name: 'Lista de fuentes de Lumina', extensions: [EXTENSION_FUENTES] }]
+  });
+  if (canceled || !filePath) return { ok: false, cancelado: true };
+  try {
+    fs.writeFileSync(filePath, JSON.stringify(exportarFuentes(), null, 2));
+    return { ok: true, ruta: filePath };
+  } catch {
+    return { ok: false, error: 'No se pudo guardar el archivo.' };
+  }
+});
+ipcMain.handle('importar-fuentes-desde-dialogo', async () => {
+  if (!ventanaPrincipal) return { ok: false };
+  const { canceled, filePaths } = await dialog.showOpenDialog(ventanaPrincipal, {
+    title: 'Importar fuentes de noticias',
+    filters: [{ name: 'Lista de fuentes de Lumina', extensions: [EXTENSION_FUENTES, 'json'] }],
+    properties: ['openFile']
+  });
+  if (canceled || !filePaths[0]) return { ok: false, cancelado: true };
+  return leerArchivoFuentes(filePaths[0]);
+});
+ipcMain.handle('confirmar-importacion-fuentes', (_evento, seleccionadas) => importarFuentes(seleccionadas));
 ipcMain.handle('restablecer-configuracion', () => {
   const resultado = restablecerConfiguracion();
   aplicarInicioConWindows(resultado.iniciarConWindows);
@@ -167,39 +249,56 @@ ipcMain.handle('buscar-con-ia', (_evento, consulta) => {
 });
 ipcMain.handle('cerrar-panel-ia', () => cerrarPanelIA());
 
-app.whenReady().then(() => {
-  // El Mica nativo también tiene variante clara/oscura — se sincroniza con
-  // el tema guardado ANTES de crear la ventana, para que no haya un
-  // parpadeo del tema equivocado al abrir la app. Se mueve aquí (antes
-  // vivía arriba, a nivel de módulo) porque obtenerConfiguracion() ahora
-  // usa app.getPath('userData'), que solo debe llamarse una vez la app
-  // está lista.
-  const configInicial = obtenerConfiguracion();
-  nativeTheme.themeSource = configInicial.tema === 'oscuro' ? 'dark' : 'light';
-
-  // Se re-aplica en cada arranque (no solo al guardar) para que se
-  // mantenga bien tras una actualización o si Windows perdió el registro.
-  aplicarInicioConWindows(configInicial.iniciarConWindows);
-
-  crearVentana();
-
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) crearVentana();
+if (bloqueoInstanciaUnica) {
+  // Un doble clic en un .fuenteslumina mientras Lumina ya está abierta
+  // llega aquí en vez de abrir una ventana nueva (ver el candado arriba).
+  app.on('second-instance', (_evento, argv) => {
+    if (ventanaPrincipal) {
+      if (ventanaPrincipal.isMinimized()) ventanaPrincipal.restore();
+      ventanaPrincipal.focus();
+    }
+    manejarArchivoDeFuentes(extraerRutaDeFuentes(argv));
   });
 
-  // app.isPackaged es false corriendo con "npm start" — electron-updater
-  // no tiene de dónde descargar una versión "instalada" en ese caso y solo
-  // llenaría la consola de errores, así que ni se intenta. Fuera de eso,
-  // revisa GitHub Releases al abrir la app; si hay una versión nueva, la
-  // descarga sola en segundo plano y muestra el aviso nativo de Windows
-  // cuando ya está lista — se instala la próxima vez que cierres la app,
-  // sin pedir nada manual y sin tocar userData (ver "build.publish" en
-  // package.json para dónde busca esa versión nueva).
-  if (app.isPackaged) {
-    autoUpdater.checkForUpdatesAndNotify();
-  }
-});
+  app.whenReady().then(() => {
+    // El Mica nativo también tiene variante clara/oscura — se sincroniza con
+    // el tema guardado ANTES de crear la ventana, para que no haya un
+    // parpadeo del tema equivocado al abrir la app. Se mueve aquí (antes
+    // vivía arriba, a nivel de módulo) porque obtenerConfiguracion() ahora
+    // usa app.getPath('userData'), que solo debe llamarse una vez la app
+    // está lista.
+    const configInicial = obtenerConfiguracion();
+    nativeTheme.themeSource = configInicial.tema === 'oscuro' ? 'dark' : 'light';
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
-});
+    // Se re-aplica en cada arranque (no solo al guardar) para que se
+    // mantenga bien tras una actualización o si Windows perdió el registro.
+    aplicarInicioConWindows(configInicial.iniciarConWindows);
+
+    crearVentana();
+
+    // Si Lumina arrancó porque alguien hizo doble clic en un .fuenteslumina
+    // (la app no estaba corriendo todavía), el archivo llega en el propio
+    // process.argv de este primer arranque en vez de por 'second-instance'.
+    manejarArchivoDeFuentes(extraerRutaDeFuentes(process.argv));
+
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) crearVentana();
+    });
+
+    // app.isPackaged es false corriendo con "npm start" — electron-updater
+    // no tiene de dónde descargar una versión "instalada" en ese caso y solo
+    // llenaría la consola de errores, así que ni se intenta. Fuera de eso,
+    // revisa GitHub Releases al abrir la app; si hay una versión nueva, la
+    // descarga sola en segundo plano y muestra el aviso nativo de Windows
+    // cuando ya está lista — se instala la próxima vez que cierres la app,
+    // sin pedir nada manual y sin tocar userData (ver "build.publish" en
+    // package.json para dónde busca esa versión nueva).
+    if (app.isPackaged) {
+      autoUpdater.checkForUpdatesAndNotify();
+    }
+  });
+
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') app.quit();
+  });
+}

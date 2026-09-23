@@ -296,7 +296,12 @@
         <section class="seccion-configuracion oculto seccion-fuentes" data-seccion="fuentes">
           <h3 class="titulo-seccion-configuracion">Fuentes de noticias</h3>
           <div id="lista-fuentes" class="lista-fuentes"></div>
-          <button id="abrir-form-fuente" class="boton-mas-recordatorio">+ Agregar fuente</button>
+          <div class="acciones-compartir-fuentes">
+            <button id="abrir-form-fuente" class="boton-mas-recordatorio">+ Agregar fuente</button>
+            <button id="exportar-fuentes" class="boton-nav" type="button" title="Guarda un archivo con tus fuentes para compartirlo">Exportar</button>
+            <button id="importar-fuentes" class="boton-nav" type="button" title="Agrega fuentes desde un archivo que te compartieron">Importar</button>
+          </div>
+          <p id="aviso-compartir-fuentes" class="aviso-compartir-fuentes oculto"></p>
           <div id="form-fuente" class="formulario-colapsable colapsado">
             <h4 id="titulo-form-fuente" class="titulo-form-fuente">Nueva fuente</h4>
             <label class="campo-configuracion">
@@ -469,6 +474,23 @@
         <button id="cerrar-fuentes" class="boton-nav">✕</button>
       </div>
       <div id="grid-fuentes" class="grid-fuentes"></div>
+    </div>
+  </div>
+
+  <!-- Importar fuentes: oculto hasta que se abre a mano o se detecta un
+       archivo .fuenteslumina (doble clic, con la app abierta o cerrada) -->
+  <div id="capa-importar-fuentes" class="oculto capa-configuracion">
+    <div id="contenido-importar-fuentes" class="tarjeta contenido-guardados">
+      <div class="cabecera-configuracion">
+        <h2>Importar fuentes</h2>
+        <button id="cerrar-importar-fuentes" class="boton-nav">✕</button>
+      </div>
+      <p id="mensaje-importar-fuentes" class="mensaje-importar-fuentes"></p>
+      <div id="lista-importar-fuentes" class="lista-fuentes"></div>
+      <div class="acciones-configuracion">
+        <button id="cancelar-importar-fuentes" class="boton-nav" type="button">Cancelar</button>
+        <button id="confirmar-importar-fuentes" class="boton-cargar-mas" type="button">Agregar seleccionadas</button>
+      </div>
     </div>
   </div>
 
