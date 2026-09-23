@@ -993,6 +993,20 @@ h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.2px; }
 .companera-chia.oculto { display: none; }
 .companera-chia:not(.oculto) { display: flex; }
 
+/* Modo "acoplada" (2026-09-22, pedido de Abel: que se ajuste solo con la
+   ventana, y que no se monte sobre el artículo cuando la ventana está muy
+   angosta): ajustarCompaneraChiaAlEspacio() en renderer.js la agrega cuando
+   ya no hay hueco para flotar sin tapar el texto. Deja de flotar (vuelve a
+   ser un hijo normal del flex de #modo-lectura, como la barra lateral) —
+   panel-articulo se angosta solo para hacerle lugar, en vez de que se le
+   monte encima. El gap de 16px entre paneles de #modo-lectura ya separa
+   esto de panel-articulo sin agregar nada aparte. */
+.companera-chia.acoplada {
+  position: static;
+  flex-shrink: 0;
+}
+.companera-chia.acoplada .asa-companera-chia { display: none; }
+
 /* Solo la cara y la onda escalan con el ancho — los botones NO: crecer al
    mismo ritmo que el panel los volvía enormes y desproporcionados apenas
    Abel agrandaba un poco la ventana (Abel lo pidió corregir, 2026-09-22).

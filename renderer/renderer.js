@@ -939,6 +939,7 @@ LectorVoz.alCambiar(({ estado, indice, total, bloque }) => {
   // mientras de verdad está sonando la voz — congelada en pausa/detenido
   // (ver companeraChiaAlCambiarEstado abajo).
   document.getElementById('companera-chia').classList.toggle('oculto', !activo);
+  if (activo) ajustarCompaneraChiaAlEspacio(); // recién visible: calcula si flota o va acoplada antes de que se note
   document.getElementById('modo-lectura').classList.toggle('leyendo', estado === 'leyendo');
   companeraChiaAlCambiarEstado(estado === 'leyendo');
 });
@@ -980,8 +981,20 @@ function companeraChiaAlCambiarEstado(hablando) {
 // escala solo desde esta única variable). Los límites evitan que quede
 // ilegible de chica o que se salga de la ventana de grande.
 const ANCHO_COMPANERA_CHIA_DEFECTO = 200;
-const ANCHO_COMPANERA_CHIA_MIN = 130;
+const ANCHO_COMPANERA_CHIA_MIN = 130; // mínimo mientras flota (número que Abel puede elegir a mano)
 const ANCHO_COMPANERA_CHIA_MAX = 420;
+// Ancho fijo del modo "acoplada" (ver ajustarCompaneraChiaAlEspacio) — no es
+// arrastrable, así que no tiene que respetar ANCHO_COMPANERA_CHIA_MIN; solo
+// necesita caber la cuadrícula de 3 botones (3×32px + 2 huecos de 8px) más
+// el padding del panel (14px de cada lado) sin que se corten.
+const ANCHO_COMPANERA_CHIA_ACOPLADA = 150;
+
+// El ancho que Abel eligió a mano (arrastrando o restableciendo) — separado
+// del ancho que se ve EN ESTE MOMENTO, que puede estar recortado
+// temporalmente por falta de espacio. Al ganar espacio de nuevo (agrandar
+// la ventana), vuelve a este valor solo, sin que Abel tenga que arrastrar
+// otra vez.
+let anchoPreferidoCompaneraChia = ANCHO_COMPANERA_CHIA_DEFECTO;
 
 function aplicarAnchoCompaneraChia(ancho) {
   const limitado = Math.min(ANCHO_COMPANERA_CHIA_MAX, Math.max(ANCHO_COMPANERA_CHIA_MIN, ancho || ANCHO_COMPANERA_CHIA_DEFECTO));
@@ -989,8 +1002,53 @@ function aplicarAnchoCompaneraChia(ancho) {
   return limitado;
 }
 
+// Cuánto espacio real queda a la derecha del artículo antes del borde de la
+// ventana — lo mismo que ocuparía flotando ahí sin taparlo.
+function espacioParaCompaneraChia() {
+  const panel = document.getElementById('panel-articulo');
+  if (!panel) return 0;
+  const MARGEN_DERECHO = 24; // el mismo "right" que usa .companera-chia al flotar
+  const COLCHON = 10; // un respiro extra para no quedar pegada al artículo
+  return window.innerWidth - panel.getBoundingClientRect().right - MARGEN_DERECHO - COLCHON;
+}
+
+// El corazón del ajuste automático (pedido por Abel, 2026-09-22): mientras
+// haya espacio suficiente a la derecha del artículo, la compañera flota ahí
+// (como hasta ahora, sin quitarle ancho a la noticia) y su tamaño se recorta
+// en vivo si la ventana se hace más chica. En cuanto ya no cabe flotando sin
+// taparlo, pasa a "acoplada": deja de flotar y se vuelve un panel más de la
+// fila (como la barra lateral), empujando al artículo lo justo para no
+// superponerse — la solución al caso de ventana muy angosta.
+function ajustarCompaneraChiaAlEspacio() {
+  const companera = document.getElementById('companera-chia');
+  if (companera.classList.contains('oculto')) return; // se recalcula solo al volver a mostrarse
+
+  // Si ya estaba acoplada, ella misma le resta ancho a panel-articulo en
+  // este momento (comparten la misma fila flex) — medir el espacio ASÍ
+  // daría un resultado sesgado (el artículo se ve más angosto de lo que
+  // sería en realidad flotando). Se quita la clase primero para medir
+  // siempre "como si flotara" y recién ahí se decide — sin esto, ensanchar
+  // la ventana después de haber quedado acoplada podía no notarlo y
+  // quedarse acoplada de más.
+  companera.classList.remove('acoplada');
+  const espacio = espacioParaCompaneraChia();
+  const cabeFlotando = espacio >= ANCHO_COMPANERA_CHIA_MIN;
+  companera.classList.toggle('acoplada', !cabeFlotando);
+
+  if (cabeFlotando) {
+    aplicarAnchoCompaneraChia(Math.min(anchoPreferidoCompaneraChia, espacio));
+  } else {
+    aplicarAnchoCompaneraChia(ANCHO_COMPANERA_CHIA_ACOPLADA);
+  }
+}
+
+window.addEventListener('resize', ajustarCompaneraChiaAlEspacio);
+
 // Arrastrar la esquina cambia el ancho en vivo; solo se guarda en
-// Configuración al soltar el mouse, no en cada pixel que se mueve.
+// Configuración al soltar el mouse, no en cada pixel que se mueve. Solo
+// tiene sentido flotando — acoplada no se arrastra (ver
+// .companera-chia.acoplada .asa-companera-chia en styles.css, que la
+// esconde ahí).
 function iniciarArrastreCompaneraChia(eventoInicial) {
   eventoInicial.preventDefault();
   const anchoInicial = document.getElementById('companera-chia').getBoundingClientRect().width;
@@ -1000,15 +1058,14 @@ function iniciarArrastreCompaneraChia(eventoInicial) {
   function alMover(evento) {
     // El panel está anclado por la derecha — arrastrar hacia la
     // IZQUIERDA (x baja) es lo que debe agrandarlo.
-    aplicarAnchoCompaneraChia(anchoInicial + (xInicial - evento.clientX));
+    anchoPreferidoCompaneraChia = aplicarAnchoCompaneraChia(anchoInicial + (xInicial - evento.clientX));
   }
 
   function alSoltar() {
     document.removeEventListener('mousemove', alMover);
     document.removeEventListener('mouseup', alSoltar);
     document.body.style.userSelect = '';
-    const anchoFinal = document.getElementById('companera-chia').getBoundingClientRect().width;
-    window.api.guardarConfiguracion({ companeraChiaAncho: Math.round(anchoFinal) });
+    window.api.guardarConfiguracion({ companeraChiaAncho: Math.round(anchoPreferidoCompaneraChia) });
   }
 
   document.addEventListener('mousemove', alMover);
@@ -1017,6 +1074,7 @@ function iniciarArrastreCompaneraChia(eventoInicial) {
 
 document.getElementById('asa-companera-chia').addEventListener('mousedown', iniciarArrastreCompaneraChia);
 document.getElementById('asa-companera-chia').addEventListener('dblclick', () => {
+  anchoPreferidoCompaneraChia = ANCHO_COMPANERA_CHIA_DEFECTO;
   aplicarAnchoCompaneraChia(ANCHO_COMPANERA_CHIA_DEFECTO);
   window.api.guardarConfiguracion({ companeraChiaAncho: ANCHO_COMPANERA_CHIA_DEFECTO });
 });
@@ -1786,7 +1844,8 @@ function aplicarConfigEnVivo(config, origen) {
   document.getElementById('alternar-calido').classList.toggle('guardado', Boolean(config.modoCalidoLectura));
   aplicarOpcionesVoz(config);
   aplicarTamanoTexto(config.escalaTextoLectura || 0);
-  aplicarAnchoCompaneraChia(config.companeraChiaAncho);
+  anchoPreferidoCompaneraChia = config.companeraChiaAncho || ANCHO_COMPANERA_CHIA_DEFECTO;
+  aplicarAnchoCompaneraChia(anchoPreferidoCompaneraChia);
 
   if (NOTICIAS_POR_PAGINA !== config.noticiasPorPagina) {
     NOTICIAS_POR_PAGINA = config.noticiasPorPagina;
@@ -2219,7 +2278,8 @@ async function iniciar() {
   document.getElementById('alternar-calido').classList.toggle('guardado', Boolean(config.modoCalidoLectura));
   aplicarOpcionesVoz(config);
   aplicarTamanoTexto(config.escalaTextoLectura || 0);
-  aplicarAnchoCompaneraChia(config.companeraChiaAncho);
+  anchoPreferidoCompaneraChia = config.companeraChiaAncho || ANCHO_COMPANERA_CHIA_DEFECTO;
+  aplicarAnchoCompaneraChia(anchoPreferidoCompaneraChia);
 
   guardadosCache = await window.api.obtenerGuardados();
 
