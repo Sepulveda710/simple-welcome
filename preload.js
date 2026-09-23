@@ -39,6 +39,11 @@ contextBridge.exposeInMainWorld('api', {
   alDetectarArchivoFuentes: (callback) => ipcRenderer.on('fuentes-detectadas-por-archivo', (_evento, resultado) => callback(resultado)),
   restablecerConfiguracion: () => ipcRenderer.invoke('restablecer-configuracion'),
   obtenerVersionApp: () => ipcRenderer.invoke('obtener-version-app'),
+  buscarActualizaciones: () => ipcRenderer.invoke('buscar-actualizaciones'),
+  instalarActualizacion: () => ipcRenderer.invoke('instalar-actualizacion'),
+  // Un solo evento cubre tanto el chequeo silencioso del arranque como el
+  // botón manual — ver el comentario junto a autoUpdater.on(...) en main.js.
+  alCambiarEstadoActualizacion: (callback) => ipcRenderer.on('estado-actualizacion', (_evento, datos) => callback(datos)),
   obtenerGuardados: () => ipcRenderer.invoke('obtener-guardados'),
   guardarArticulo: (articulo) => ipcRenderer.invoke('guardar-articulo', articulo),
   eliminarGuardado: (enlace) => ipcRenderer.invoke('eliminar-guardado', enlace),

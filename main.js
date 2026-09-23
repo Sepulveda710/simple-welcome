@@ -37,6 +37,21 @@ Menu.setApplicationMenu(null);
 
 let ventanaPrincipal = null; // referencia para los handlers de IPC del panel-ia, más abajo
 
+// --- Buscar actualizaciones desde la interfaz (Configuración > Acerca de) ---
+// autoUpdater es un singleton de electron-updater: estos listeners quedan
+// puestos para SIEMPRE, sin importar si lo disparó el chequeo silencioso
+// del arranque (ver app.isPackaged más abajo) o el botón manual — así la
+// interfaz refleja en vivo cualquiera de los dos caminos con el mismo código.
+function enviarEstadoActualizacion(datos) {
+  if (ventanaPrincipal) ventanaPrincipal.webContents.send('estado-actualizacion', datos);
+}
+autoUpdater.on('checking-for-update', () => enviarEstadoActualizacion({ estado: 'buscando' }));
+autoUpdater.on('update-not-available', () => enviarEstadoActualizacion({ estado: 'al-dia' }));
+autoUpdater.on('update-available', (info) => enviarEstadoActualizacion({ estado: 'disponible', version: info.version }));
+autoUpdater.on('download-progress', (progreso) => enviarEstadoActualizacion({ estado: 'descargando', porcentaje: Math.round(progreso.percent) }));
+autoUpdater.on('update-downloaded', (info) => enviarEstadoActualizacion({ estado: 'lista', version: info.version }));
+autoUpdater.on('error', (error) => enviarEstadoActualizacion({ estado: 'error', mensaje: error.message }));
+
 // Extensión propia para compartir listas de fuentes (ver package.json →
 // build.fileAssociations): el archivo es JSON plano (mismo formato que
 // devuelve exportarFuentes en gestion-fuentes.js), pero con su propia
@@ -221,6 +236,17 @@ ipcMain.handle('restablecer-configuracion', () => {
   return resultado;
 });
 ipcMain.handle('obtener-version-app', () => app.getVersion());
+
+// Igual que el chequeo automático de app.isPackaged al arrancar (más abajo):
+// corriendo con "npm start" no hay ninguna versión "instalada" contra la
+// cual comparar, así que ni se intenta — devuelve un error claro para que
+// el botón lo muestre en vez de fallar en silencio o tronar en la consola.
+ipcMain.handle('buscar-actualizaciones', () => {
+  if (!app.isPackaged) return { ok: false, error: 'Buscar actualizaciones solo funciona en la versión instalada.' };
+  autoUpdater.checkForUpdates();
+  return { ok: true };
+});
+ipcMain.handle('instalar-actualizacion', () => autoUpdater.quitAndInstall());
 ipcMain.handle('obtener-guardados', () => obtenerGuardados());
 ipcMain.handle('guardar-articulo', (_evento, articulo) => guardarArticulo(articulo));
 ipcMain.handle('eliminar-guardado', (_evento, enlace) => eliminarGuardado(enlace));

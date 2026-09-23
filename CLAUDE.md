@@ -943,3 +943,45 @@ fuentes y deje elegir cuáles agregar con toggles, sin agregarlas solas.
   clic real de Windows sobre un `.fuenteslumina` con la app empaquetada
   (la asociación de archivo solo se activa de verdad con un instalador
   real, no con `npm start`) — verificarlo cuando Abel instale la 6.0.
+
+**Buscar actualizaciones desde la interfaz, con barra de progreso —
+rama `main` directo (2026-09-22/23).** Antes la app solo revisaba
+GitHub Releases sola al arrancar y se quedaba en silencio hasta la
+notificación nativa de Windows cuando ya estaba lista — Abel pidió
+verlo dentro de la app, con barra de progreso completa.
+
+- **`main.js`**: los listeners de `autoUpdater` (`checking-for-update`,
+  `update-available`, `download-progress`, `update-downloaded`,
+  `update-not-available`, `error`) quedan puestos UNA sola vez a nivel de
+  módulo y mandan el estado a la interfaz por el canal
+  `estado-actualizacion` — no importa si los disparó el chequeo
+  silencioso de siempre (`autoUpdater.checkForUpdatesAndNotify()` en
+  `app.whenReady()`, sin tocar) o el botón nuevo
+  (`ipcMain.handle('buscar-actualizaciones', ...)`, que llama
+  `autoUpdater.checkForUpdates()` — sin el `AndNotify`, porque ya no hace
+  falta la notificación nativa aparte, la interfaz ya lo muestra). El
+  canal `instalar-actualizacion` llama `autoUpdater.quitAndInstall()`
+  para no esperar a que Abel cierre la app solo. Con `npm start`
+  (`!app.isPackaged`) el handler devuelve un error claro en vez de
+  intentarlo — no hay versión "instalada" contra la cual comparar.
+- **Interfaz** (Configuración > Acerca de): botón "Buscar
+  actualizaciones", un texto de estado, una barra de progreso
+  (`.barra-progreso`/`.barra-progreso-relleno`, ancho en % puesto por
+  JS) y un botón "Reiniciar e instalar" que solo aparece cuando ya
+  está lista. Un solo bloque de estados en `renderer.js` reacciona al
+  evento `estado-actualizacion` sin importar quién lo disparó — si el
+  chequeo silencioso del arranque encuentra algo mientras Abel tiene
+  Configuración abierta, la barra se mueve sola sin que él haya tocado
+  el botón.
+- Probado emitiendo los eventos REALES de `autoUpdater` a mano
+  (`autoUpdater.emit('download-progress', {percent: 42.4})`, etc., sin
+  depender de que GitHub tenga de verdad una versión más nueva que
+  bajar) e inyectando JS temporal para leer el DOM tras cada uno:
+  confirmado el texto, el ancho de la barra, que el botón de buscar se
+  deshabilita mientras busca/descarga, y que "Reiniciar e instalar"
+  solo aparece cuando el estado es "lista". También confirmado que sin
+  empaquetar el botón avisa en vez de fallar en silencio.
+  **Lo que NO se probó** (no se puede sin publicar de verdad): la
+  descarga real desde GitHub Releases y `quitAndInstall()` cerrando e
+  instalando de verdad — probarlo con la primera actualización real que
+  Abel reciba después de instalar la 6.0.

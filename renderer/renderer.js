@@ -106,6 +106,68 @@ async function pintarVersionApp() {
   document.getElementById('acerca-de-version').textContent = `${mayor}.${menor}`;
 }
 
+// --- Buscar actualizaciones (Configuración > Acerca de) ---
+// Un solo flujo de estados cubre tanto el botón manual como el chequeo
+// silencioso que ya corre solo al arrancar (ver autoUpdater.on(...) en
+// main.js) — si ese chequeo automático encuentra algo mientras Abel tiene
+// Configuración abierta, esta misma barra se mueve sola.
+
+function mostrarEstadoActualizacion(texto) {
+  const aviso = document.getElementById('estado-actualizacion');
+  aviso.textContent = texto;
+  aviso.classList.toggle('oculto', !texto);
+}
+
+function mostrarProgresoActualizacion(porcentaje) {
+  const barra = document.getElementById('barra-progreso-actualizacion');
+  if (porcentaje === null) {
+    barra.classList.add('oculto');
+    return;
+  }
+  barra.classList.remove('oculto');
+  document.getElementById('relleno-progreso-actualizacion').style.width = `${porcentaje}%`;
+}
+
+document.getElementById('buscar-actualizaciones').addEventListener('click', async () => {
+  document.getElementById('instalar-actualizacion').classList.add('oculto');
+  const resultado = await window.api.buscarActualizaciones();
+  if (!resultado.ok) mostrarEstadoActualizacion(resultado.error); // ej. corriendo con "npm start"
+});
+
+window.api.alCambiarEstadoActualizacion((datos) => {
+  const botonBuscar = document.getElementById('buscar-actualizaciones');
+  const botonInstalar = document.getElementById('instalar-actualizacion');
+
+  if (datos.estado === 'buscando') {
+    botonBuscar.disabled = true;
+    mostrarEstadoActualizacion('Buscando actualizaciones…');
+    mostrarProgresoActualizacion(null);
+  } else if (datos.estado === 'al-dia') {
+    botonBuscar.disabled = false;
+    mostrarEstadoActualizacion('Ya tienes la última versión.');
+    mostrarProgresoActualizacion(null);
+  } else if (datos.estado === 'disponible') {
+    mostrarEstadoActualizacion(`Hay una versión nueva (${datos.version}) — descargando…`);
+    mostrarProgresoActualizacion(0);
+  } else if (datos.estado === 'descargando') {
+    mostrarEstadoActualizacion(`Descargando actualización… ${datos.porcentaje}%`);
+    mostrarProgresoActualizacion(datos.porcentaje);
+  } else if (datos.estado === 'lista') {
+    botonBuscar.disabled = false;
+    mostrarEstadoActualizacion(`Actualización ${datos.version} lista para instalar.`);
+    mostrarProgresoActualizacion(100);
+    botonInstalar.classList.remove('oculto');
+  } else if (datos.estado === 'error') {
+    botonBuscar.disabled = false;
+    mostrarEstadoActualizacion(`No se pudo actualizar: ${datos.mensaje}`);
+    mostrarProgresoActualizacion(null);
+  }
+});
+
+document.getElementById('instalar-actualizacion').addEventListener('click', () => {
+  window.api.instalarActualizacion();
+});
+
 async function pintarSaludo() {
   const saludo = await window.api.obtenerSaludo();
   document.getElementById('fecha').textContent = saludo.fecha;
