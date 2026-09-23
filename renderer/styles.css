@@ -530,6 +530,17 @@ h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.2px; }
   display: none;
 }
 
+/* Bug real que reportó Abel: con el título oculto (es .texto-colapsable),
+   ya no queda nada con flex:1 que empuje #alternar-barra hacia la
+   derecha — los dos botones de 24px quedaban lado a lado sin caber en los
+   ~32px que deja el ancho colapsado (48px, menos el padding), y
+   overflow:hidden se comía el segundo botón entero. En columna, cada uno
+   usa el ancho completo y ninguno se corta. */
+.barra-lateral.colapsada .cabecera-barra {
+  flex-direction: column;
+  gap: 6px;
+}
+
 .cabecera-barra {
   position: sticky;
   top: -12px; /* compensa el padding del contenedor para llegar hasta el borde real */

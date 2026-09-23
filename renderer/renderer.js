@@ -846,10 +846,9 @@ async function abrirModoLectura(enlace, forzar = false, direccion = null) {
     // En ventanas angostas la barra lateral y el artículo compiten por
     // espacio — arranca colapsada ahí; en ventanas anchas no hace falta.
     const barra = document.getElementById('barra-lateral');
-    const botonAlternar = document.getElementById('alternar-barra');
     const debeColapsar = window.innerWidth < 900;
     barra.classList.toggle('colapsada', debeColapsar);
-    botonAlternar.textContent = debeColapsar ? '⟩' : '⟨';
+    aplicarIconoAlternarBarra(debeColapsar);
 
     const saludoEl = document.getElementById('saludo');
     const filaEl = document.getElementById('fila-principal');
@@ -1379,12 +1378,20 @@ document.getElementById('capa-ayuda-atajos').addEventListener('click', (evento) 
   if (evento.target.id === 'capa-ayuda-atajos') cerrarCapaModal('capa-ayuda-atajos', 'contenido-ayuda-atajos');
 });
 
+// El icono es un chevron que apunta hacia donde "empuja" el clic — a la
+// izquierda cuando está expandida (clic = colapsarla), a la derecha cuando
+// está colapsada (clic = expandirla). Mismos glifos que Anterior/Siguiente
+// (E76B/E76C) para que se vea parte del mismo lenguaje visual de la app —
+// antes eran los caracteres "⟨"/"⟩", que a Abel no le convencían.
+function aplicarIconoAlternarBarra(colapsada) {
+  document.getElementById('icono-alternar-barra').textContent = colapsada ? '' : '';
+}
+
 // Colapsar/expandir la barra lateral de artículos.
 document.getElementById('alternar-barra').addEventListener('click', () => {
   const barra = document.getElementById('barra-lateral');
-  const boton = document.getElementById('alternar-barra');
   barra.classList.toggle('colapsada');
-  boton.textContent = barra.classList.contains('colapsada') ? '⟩' : '⟨';
+  aplicarIconoAlternarBarra(barra.classList.contains('colapsada'));
 });
 
 // Intercepta los enlaces DENTRO de un artículo (los que trae el propio
