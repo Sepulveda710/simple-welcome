@@ -14,6 +14,8 @@ let ultimoScrollTop = 0; // para saber si el scroll va hacia arriba o hacia abaj
 let textoSeleccionActual = ''; // último texto seleccionado en modo lectura, para los botones de la píldora
 let scrollPrincipalGuardado = 0; // posición del scroll de la lista principal al entrar a modo lectura, para restaurarla al volver
 let caraChiaPredeterminada = 'relajado'; // elegida en Configuración > Chía — la cara "de reposo"; se sobreescribe con la config guardada al iniciar
+let filtroListaLateral = 'todas'; // 'todas' | 'no-leidas' | 'guardadas' — filtro de la barra lateral del modo lectura
+let terminoBuscarLateral = ''; // texto del buscador de la barra lateral (coincide con título o fuente)
 
 function estaGuardado(enlace) {
   return guardadosCache.some((g) => g.enlace === enlace);
@@ -520,20 +522,61 @@ function formatearSeparadorFecha(fechaIso) {
   return fecha.toLocaleDateString('es', { day: 'numeric', month: 'long' });
 }
 
+// Título de la cabecera de la barra lateral: el nombre del sitio si estás
+// viendo "Ver por fuente", el de la categoría, o "Para ti hoy".
+function tituloBarraLateral() {
+  if (fuenteActiva) return fuenteActiva;
+  if (categoriaActiva === 'Para ti hoy') return 'Para ti hoy';
+  return `Noticias de ${categoriaActiva}`;
+}
+
+// Aplica la búsqueda y el filtro (Todas/No leídas/Guardadas) de la barra
+// lateral sobre articulosModoLectura — Anterior/Siguiente y los contadores
+// de arriba siguen viendo la lista COMPLETA sin filtrar; solo lo que se
+// pinta abajo cambia.
+function articulosParaBarraLateral() {
+  let lista = articulosModoLectura;
+  if (filtroListaLateral === 'no-leidas') lista = lista.filter((a) => !leidosCache.includes(a.enlace));
+  else if (filtroListaLateral === 'guardadas') lista = lista.filter((a) => estaGuardado(a.enlace));
+
+  if (terminoBuscarLateral) {
+    const termino = terminoBuscarLateral.toLowerCase();
+    lista = lista.filter((a) => a.titulo.toLowerCase().includes(termino) || a.fuente.toLowerCase().includes(termino));
+  }
+  return lista;
+}
+
 function pintarBarraLateral(enlaceActivo) {
   const lista = document.getElementById('lista-lateral');
-  const resumen = document.getElementById('resumen-barra-lateral');
   lista.innerHTML = '';
 
+  document.getElementById('titulo-barra-lateral').textContent = tituloBarraLateral();
+
+  // Los contadores reflejan SIEMPRE la lista completa (sin el filtro ni la
+  // búsqueda) — son "dónde estoy" y "cuánto falta", no cambian solo porque
+  // estés buscando algo puntual.
   const indiceActivo = articulosModoLectura.findIndex((a) => a.enlace === enlaceActivo);
   const sinLeer = articulosModoLectura.filter((a) => !leidosCache.includes(a.enlace)).length;
-  resumen.textContent = articulosModoLectura.length
-    ? `${indiceActivo === -1 ? '—' : indiceActivo + 1} de ${articulosModoLectura.length} · ${sinLeer} sin leer`
+  document.getElementById('contador-posicion-lateral').textContent = articulosModoLectura.length
+    ? `${indiceActivo === -1 ? '—' : indiceActivo + 1} / ${articulosModoLectura.length}`
     : '';
+  document.getElementById('contador-sinleer-lateral').textContent = articulosModoLectura.length
+    ? `${sinLeer} sin leer`
+    : '';
+
+  const articulosFiltrados = articulosParaBarraLateral();
+
+  if (articulosModoLectura.length && !articulosFiltrados.length) {
+    const vacio = document.createElement('p');
+    vacio.className = 'lista-lateral-vacia texto-colapsable';
+    vacio.textContent = terminoBuscarLateral ? 'Sin resultados para esa búsqueda.' : 'No hay artículos en este filtro.';
+    lista.appendChild(vacio);
+    return;
+  }
 
   let separadorAnterior = null;
 
-  articulosModoLectura.forEach((articulo) => {
+  articulosFiltrados.forEach((articulo) => {
     // El orden ya viene por fecha descendente desde lector-rss.js, así que
     // insertar el separador apenas cambia el día no rompe el orden de
     // Anterior/Siguiente — solo agrupa visualmente lo que ya está agrupado.
@@ -547,6 +590,7 @@ function pintarBarraLateral(enlaceActivo) {
     }
 
     const yaLeida = leidosCache.includes(articulo.enlace);
+    const yaGuardada = estaGuardado(articulo.enlace);
 
     const item = document.createElement('div');
     item.className = `item-lateral ${articulo.enlace === enlaceActivo ? 'activo' : ''} ${yaLeida ? 'leida' : ''}`;
@@ -561,9 +605,35 @@ function pintarBarraLateral(enlaceActivo) {
         </div>
         <span class="titulo-lateral">${escaparHtml(articulo.titulo)}</span>
       </div>
+      <div class="acciones-item-lateral">
+        <button class="boton-marcar" title="Marcar como leída/no leída">${yaLeida ? '✓' : ''}</button>
+        <button class="boton-guardar-noticia ${yaGuardada ? 'guardado' : ''}" title="Guardar para después">★</button>
+      </div>
     `;
 
     item.addEventListener('click', () => abrirModoLectura(articulo.enlace));
+
+    // Igual que en la lista principal: marcar/guardar no debe abrir el
+    // artículo. Acá además se repinta la barra entera (en vez de solo
+    // alternar clases) porque el filtro activo puede hacer que el ítem
+    // deba desaparecer — ej. marcar como leída una noticia mientras el
+    // filtro "No leídas" está puesto.
+    item.querySelector('.boton-marcar').addEventListener('click', async (evento) => {
+      evento.stopPropagation();
+      await alternarLeidoLocal(articulo.enlace);
+      pintarBarraLateral(enlaceActual);
+    });
+
+    item.querySelector('.boton-guardar-noticia').addEventListener('click', async (evento) => {
+      evento.stopPropagation();
+      if (estaGuardado(articulo.enlace)) {
+        guardadosCache = await window.api.eliminarGuardado(articulo.enlace);
+      } else {
+        guardadosCache = await window.api.guardarArticulo(articulo);
+      }
+      if (articulo.enlace === enlaceActual) actualizarBotonGuardarArticulo();
+      pintarBarraLateral(enlaceActual);
+    });
 
     lista.appendChild(item);
   });
@@ -573,6 +643,19 @@ function pintarBarraLateral(enlaceActivo) {
   const activo = lista.querySelector('.item-lateral.activo');
   if (activo) activo.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
+
+document.getElementById('buscar-lista-lateral').addEventListener('input', (evento) => {
+  terminoBuscarLateral = evento.target.value.trim();
+  pintarBarraLateral(enlaceActual);
+});
+
+document.querySelectorAll('.filtro-lateral').forEach((boton) => {
+  boton.addEventListener('click', () => {
+    filtroListaLateral = boton.dataset.filtro;
+    document.querySelectorAll('.filtro-lateral').forEach((b) => b.classList.toggle('activo', b === boton));
+    pintarBarraLateral(enlaceActual);
+  });
+});
 
 // Compara dos URLs de imagen por su ruta, no por la URL completa — muchos
 // sitios sirven el mismo archivo con parámetros de tamaño/query distintos
@@ -746,6 +829,17 @@ async function abrirModoLectura(enlace, forzar = false, direccion = null) {
     // Los PDFs (externo) no se pueden leer aquí — sin esto, Anterior/Siguiente
     // y la barra lateral intentarían abrirlos en modo lectura y fallarían.
     articulosModoLectura = articulosModoLectura.filter((a) => !a.externo);
+
+    // Búsqueda y filtro de la barra lateral: se reinician cada vez que se
+    // ENTRA de nuevo al modo lectura (nueva sesión de lectura), pero no al
+    // navegar Anterior/Siguiente dentro de la misma — si no, el filtro que
+    // Abel eligió desaparecería solo en cuanto cambiara de artículo.
+    filtroListaLateral = 'todas';
+    terminoBuscarLateral = '';
+    document.getElementById('buscar-lista-lateral').value = '';
+    document.querySelectorAll('.filtro-lateral').forEach((boton) => {
+      boton.classList.toggle('activo', boton.dataset.filtro === 'todas');
+    });
 
     scrollPrincipalGuardado = window.scrollY;
 

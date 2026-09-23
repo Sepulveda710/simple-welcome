@@ -111,10 +111,23 @@
 
     <aside class="barra-lateral" id="barra-lateral">
       <div class="cabecera-barra">
-        <button id="cerrar-lectura"><span aria-hidden="true">←</span> <span class="texto-colapsable">Volver</span></button>
+        <button id="cerrar-lectura" title="Volver" aria-label="Volver"><span aria-hidden="true">←</span></button>
+        <h2 class="titulo-barra-lateral texto-colapsable" id="titulo-barra-lateral"></h2>
         <button id="alternar-barra" title="Ocultar/mostrar lista">⟨</button>
       </div>
-      <div id="resumen-barra-lateral" class="resumen-barra-lateral texto-colapsable"></div>
+      <div class="contadores-barra-lateral texto-colapsable">
+        <span id="contador-posicion-lateral" class="pildora-contador-lateral"></span>
+        <span id="contador-sinleer-lateral" class="pildora-contador-lateral"></span>
+      </div>
+      <div class="buscador-barra-lateral texto-colapsable">
+        <i class="icono-fluent icono-buscar-lateral" aria-hidden="true">&#xE721;</i>
+        <input type="text" id="buscar-lista-lateral" placeholder="Buscar en esta lista…" />
+      </div>
+      <div class="filtros-barra-lateral texto-colapsable" role="tablist" aria-label="Filtrar la lista">
+        <button class="filtro-lateral activo" data-filtro="todas" type="button">Todas</button>
+        <button class="filtro-lateral" data-filtro="no-leidas" type="button">No leídas</button>
+        <button class="filtro-lateral" data-filtro="guardadas" type="button">Guardadas</button>
+      </div>
       <div id="lista-lateral" class="lista-lateral texto-colapsable"></div>
     </aside>
 

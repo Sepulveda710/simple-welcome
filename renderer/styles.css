@@ -542,18 +542,40 @@ h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.2px; }
   z-index: 2;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
 }
 
+/* Antes decía "← Volver" en texto — ahora es solo la flecha, redonda e
+   icónica como #alternar-barra, para que la cabecera respire (pedido de
+   Abel sobre un boceto de Gemini). El título hace de "Volver" visualmente:
+   deja claro dónde estás sin ocupar una palabra aparte. */
 #cerrar-lectura {
   background: none;
-  border: none;
+  border: 1px solid var(--borde);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 13px;
+  color: var(--texto-secundario);
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s ease;
+}
+#cerrar-lectura:hover { background: rgba(0, 0, 0, 0.06); }
+
+.titulo-barra-lateral {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
   font-size: 14px;
   font-weight: 600;
-  color: var(--accent-texto);
-  cursor: pointer;
-  padding: 0;
+  color: var(--texto);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 #alternar-barra {
@@ -570,13 +592,89 @@ h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.2px; }
 }
 #alternar-barra:hover { background: rgba(0, 0, 0, 0.06); }
 
-.resumen-barra-lateral {
+/* Contadores: antes era una sola línea de texto ("3 de 12 · 8 sin leer");
+   ahora son dos píldoras chicas, igual de discretas (pedido de Abel sobre
+   el boceto de Gemini). Siguen viendo la lista COMPLETA sin filtrar —
+   ver articulosParaBarraLateral() en renderer.js. */
+.contadores-barra-lateral {
+  display: flex;
+  gap: 6px;
+  padding: 0 2px 10px;
+}
+.pildora-contador-lateral {
   font-size: 11px;
   color: var(--texto-secundario);
-  padding: 0 2px 8px;
+  background: rgba(0, 0, 0, 0.04);
+  padding: 2px 9px;
+  border-radius: 100px;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+}
+.pildora-contador-lateral:empty { display: none; }
+
+/* Buscador de la barra lateral: filtra por título o fuente dentro de la
+   lista ya cargada — no vuelve a pedir nada por red, ver
+   articulosParaBarraLateral() en renderer.js. */
+.buscador-barra-lateral {
+  position: relative;
+  margin: 0 2px 10px;
+}
+.icono-buscar-lateral {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: var(--texto-terciario);
+  pointer-events: none;
+}
+#buscar-lista-lateral {
+  width: 100%;
+  padding: 7px 10px 7px 30px;
+  border: 1px solid var(--borde);
+  border-radius: 100px;
+  background: rgba(0, 0, 0, 0.03);
+  color: var(--texto);
+  font-size: 12px;
+  font-family: inherit;
+}
+#buscar-lista-lateral::placeholder { color: var(--texto-terciario); }
+#buscar-lista-lateral:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--superficie);
+}
+
+/* Pestañas de filtro (Todas/No leídas/Guardadas) — cambian qué se pinta en
+   #lista-lateral sin tocar Anterior/Siguiente ni los contadores de arriba. */
+.filtros-barra-lateral {
+  display: flex;
+  gap: 4px;
+  padding: 0 2px 10px;
+}
+.filtro-lateral {
+  flex: 1;
+  background: none;
+  border: 1px solid var(--borde);
+  border-radius: 100px;
+  padding: 5px 4px;
+  font-size: 11px;
+  color: var(--texto-secundario);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.filtro-lateral:hover { background: rgba(0, 0, 0, 0.05); }
+.filtro-lateral.activo {
+  background: var(--accent-fondo);
+  border-color: var(--accent);
+  color: var(--accent-texto);
+  font-weight: 600;
+}
+
+.lista-lateral-vacia {
+  font-size: 12px;
+  color: var(--texto-terciario);
+  text-align: center;
+  padding: 20px 8px;
 }
 
 .separador-fecha-lateral {
@@ -649,6 +747,35 @@ h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.2px; }
 }
 
 .item-lateral.leida { opacity: 0.5; }
+
+/* Acciones rápidas (marcar leída / guardar): ocultas hasta que pasas el
+   mouse por la tarjeta, pedido de Abel sobre un boceto de Gemini para
+   quitar ruido visual cuando no las estás usando. Ya reservan su espacio
+   siempre (no son display:none) para que aparecer/desaparecer no mueva el
+   título ni la miniatura de al lado. Reusa los mismos .boton-marcar /
+   .boton-guardar-noticia de las tarjetas de la lista principal — mismo
+   comportamiento, solo un poco más chicos para caber en la barra angosta. */
+.acciones-item-lateral {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-self: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+.item-lateral:hover .acciones-item-lateral,
+.item-lateral:focus-within .acciones-item-lateral {
+  opacity: 1;
+  pointer-events: auto;
+}
+.acciones-item-lateral .boton-marcar,
+.acciones-item-lateral .boton-guardar-noticia {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  font-size: 11px;
+}
 
 .panel-articulo {
   flex: 1;
