@@ -97,12 +97,13 @@ function urlFavicon(enlace) {
 // La versión ya no se escribe a mano en index.html (se quedaba
 // desactualizada — decía "0.1.0" cuando ya íbamos por Beta 5) — sale de
 // package.json vía app.getVersion(), la misma fuente de verdad que usa
-// "npm start". X.Y.0 en package.json se muestra como "Beta X.Y" (ver
-// "Nombre y versión" en CLAUDE.md).
+// "npm start". Desde la 6.0 ya no se le antepone "Beta" (Abel pidió salir
+// de beta con el lanzamiento de Lumina — ver "Nombre y versión" en
+// CLAUDE.md); X.Y.0 en package.json se muestra tal cual como "X.Y".
 async function pintarVersionApp() {
-  const version = await window.api.obtenerVersionApp(); // ej. "5.2.0"
+  const version = await window.api.obtenerVersionApp(); // ej. "6.0.0"
   const [mayor, menor] = version.split('.');
-  document.getElementById('acerca-de-version').textContent = `Beta ${mayor}.${menor}`;
+  document.getElementById('acerca-de-version').textContent = `${mayor}.${menor}`;
 }
 
 async function pintarSaludo() {
@@ -2124,7 +2125,7 @@ const URL_GITHUB_ISSUES = 'https://github.com/Sepulveda710/simple-welcome/issues
 // Prellena el cuerpo del issue con la versión — GitHub lo muestra completo
 // antes de enviar, así que el usuario ve y puede borrar lo que quiera.
 function urlComentariosGithub(version) {
-  const cuerpo = `Versión de Simple Welcome: ${version}\n\n(Escribe aquí tu comentario o describe el error)`;
+  const cuerpo = `Versión de Lumina: ${version}\n\n(Escribe aquí tu comentario o describe el error)`;
   return `${URL_GITHUB_ISSUES}?body=${encodeURIComponent(cuerpo)}`;
 }
 

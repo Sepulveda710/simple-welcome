@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
   <defs>
     <linearGradient id="fondo" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#2e9bff"/>
-      <stop offset="1" stop-color="#0067c0"/>
+      <stop offset="0" stop-color="#fde08a"/>
+      <stop offset="1" stop-color="#f59e0b"/>
     </linearGradient>
     <linearGradient id="brillo" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.28"/>
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.32"/>
       <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
     </linearGradient>
   </defs>
@@ -13,8 +13,12 @@
   <rect x="8" y="8" width="240" height="240" rx="56" fill="url(#fondo)"/>
   <rect x="8" y="8" width="240" height="118" rx="56" fill="url(#brillo)"/>
 
-  <text x="128" y="196" text-anchor="middle"
-        font-family="Segoe UI Semibold, Segoe UI, sans-serif"
-        font-weight="700" font-style="italic" font-size="188"
-        fill="#ffffff">S</text>
+  <!-- Cara de Chía en ascii compacto, mismo estilo que expresiones-chia.js
+       (formato "[ ojoIzq boca ojoDer ]"), pegada al centro para que se
+       siga leyendo como carita incluso reducida a 32/16px en la barra
+       de tareas — ver acuerdo con Abel del 2026-09-22 (icono Lumina). -->
+  <text x="128" y="150" text-anchor="middle"
+        font-family="Consolas, 'Courier New', monospace"
+        font-weight="700" font-size="92" letter-spacing="-6"
+        fill="#1f2937">[^-^]</text>
 </svg>

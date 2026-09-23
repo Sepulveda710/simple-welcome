@@ -8,13 +8,20 @@ se podía hacer.
 
 ## Nombre y versión
 
-La app se llama **Simple Welcome** (antes "app-bienvenida" — el nombre del
-paquete en `package.json` y el `<title>` de `index.html` ya se actualizaron;
-la carpeta en disco se quedó con su nombre viejo a propósito, renombrarla es
-decisión de Abel, no algo para hacer sin que lo pida). Ícono: una "S"
-estilizada en `assets/icono.svg` (fuente del ícono; `assets/icono.png` es
-el render usado de verdad en `main.js`, regenerable con
-`node_modules\.bin\electron.cmd scripts\generar-icono.js` si el SVG cambia).
+La app se llama **Lumina** desde la versión 6.0 (antes "Simple Welcome",
+y antes de eso "app-bienvenida" — el nombre del paquete en `package.json`
+y el `<title>` de `index.html` ya se actualizaron; la carpeta en disco se
+quedó con su nombre viejo a propósito, renombrarla es decisión de Abel,
+no algo para hacer sin que lo pida). Ícono: el sol con la cara ascii de
+Chía (`[^-^]`, el mismo formato de `EXPRESIONES_CHIA.relajado`) en
+`assets/icono.svg` (fuente del ícono; `assets/icono.png` es el render
+usado de verdad en `main.js`, regenerable con
+`node_modules\.bin\electron.cmd scripts\generar-icono.js` si el SVG
+cambia). Antes era una "S" estilizada — cambiado en la 6.0 junto con el
+nombre, ver la nota de esa sesión más abajo. Importante: `app.setName('simple-welcome')`
+en `main.js` NO se tocó con el rebrand — es el candado que mantiene la
+carpeta de `userData` estable pase lo que pase con el nombre visible
+(ver el comentario ahí mismo).
 
 **Versionado (Beta X.Y, guardado en `package.json` como X.Y.0):** Abel dejó
 esto a criterio de quien trabaje en el código — sube tú misma la versión
@@ -31,7 +38,15 @@ seguir la serie de Y (5.3). Regla real:
   acumulación tan grande que Y ya se sentiría absurdo (¿5.19?). Ante la
   duda, es Y — Abel prefiere corregir un X de más rebajándolo que ver la
   beta subir de número principal seguido.
-- Estamos en **Beta 5.11** al momento de escribir esto (4.0 → 4.1: separar
+- **Excepción explícita de Abel (2026-09-22): la 6.0 SÍ fue un bump de X a
+  propósito**, no un accidente a corregir como el de 5.3 — Abel pidió
+  directamente "salir de beta" y lanzar una versión oficial, junto con el
+  rebrand a Lumina. No es el patrón por defecto, es la única vez (aparte
+  de la de 5.0) que un cambio de marca/lanzamiento formal justifica subir
+  X; volver a Y como bump por defecto para todo lo que venga después de
+  la 6.0.
+- Estamos en **6.0** al momento de escribir esto — desde aquí ya no se le
+  antepone "Beta" al número en la pantalla de Acerca de (4.0 → 4.1: separar
   el tema claro/oscuro del modo cálido de lectura, que antes compartían la
   misma variable — ver "Decisiones técnicas importantes" abajo. 4.1 → 4.2:
   mejoras a la barra lateral del modo lectura. 4.2 → 5.0: portada del
@@ -808,3 +823,55 @@ hay que hacer nada de esto todavía, y "anota" significa no ejecutar):
 - Probado por código (sin clicks automatizados reales): título dinámico, contadores fijos ante la búsqueda, la lista se filtra correctamente en los tres casos (búsqueda, No leídas, Guardadas), marcar como leída con el filtro "No leídas" activo quita la fila en vivo (135→134 tras el filtro, 134→133 tras marcar), Anterior/Siguiente no reinicia el filtro dentro de la misma sesión, y sí se reinicia a "Todas" al volver a entrar. Capturas confirman el ícono de búsqueda y el diseño general.
 
 **Corrección: botón "expandir" invisible al compactar la barra + íconos modernizados** (2026-09-22, mismo día). Bug real que reportó Abel: al colapsar la barra lateral, `#alternar-barra` "no se veía". Causa: `.cabecera-barra` ya no tenía `justify-content: space-between` (se quitó al agregar el título con `flex:1`, que hacía ese trabajo) — con el título oculto en modo colapsado (`.texto-colapsable`), no quedaba nada empujando a `#alternar-barra` hacia el borde, así que los dos botones circulares de 24px intentaban caber lado a lado en los ~32px que deja el ancho colapsado (48px menos padding), y `overflow: hidden` en `.barra-lateral.colapsada` se comía el segundo entero. Arreglo: `.barra-lateral.colapsada .cabecera-barra { flex-direction: column; }` — apilados, cada uno usa el ancho completo, ninguno se corta (verificado con `getBoundingClientRect()`: ambos con ancho real de 24px, sin superponerse). De paso, Abel pidió modernizar los íconos ("el de contraer nunca me ha convencido") — `#cerrar-lectura` pasó del carácter "←" a un ícono real de Segoe Fluent (`E72B`, "Back"), y `#alternar-barra` pasó de los caracteres "⟨"/"⟩" a los mismos chevrons que ya usan Anterior/Siguiente (`E76B`/`E76C`) — mismo lenguaje visual, ya probado que renderiza bien en esta fuente. `aplicarIconoAlternarBarra(colapsada)` centraliza la lógica que antes estaba duplicada en dos sitios (auto-colapso al abrir + el toggle manual). Probado por código: la fuente de los íconos carga bien, el glifo cambia correctamente entre los dos estados, y capturas de cerca confirman que ninguno sale hueco ni en blanco (mismo cuidado que con el ícono de "Detener" — ver la nota de esa corrección arriba).
+
+**Rebrand a Lumina — versión 6.0, rama `lanzamiento-lumina` (2026-09-22).**
+Abel dijo que llevaba días usando la app sin quejas y quiso "salir de beta"
+con una versión oficial, junto con cambiar nombre e ícono (llevaba tiempo
+sin convencerle del todo "Simple Welcome"). Se hizo lluvia de ideas de
+nombre e ícono con el widget de visualización antes de tocar código —
+Abel escogió **Lumina** (entre Cenit/Lumina que él propuso) y, del ícono,
+pidió combinar el concepto "sol + noticia" con la cara ascii REAL de Chía
+(no una carita genérica), compactada y sin corchetes/guion en los
+tamaños chicos según probamos — terminó quedándose con `[^-^]` a secas
+(sin espacios) en TODOS los tamaños, porque al generar el PNG de verdad y
+reducirlo a 32/16px se veía legible igual, sin falta de simplificarlo más
+(ver `assets/icono.svg`).
+
+- **Qué cambió**: `package.json` (`productName: "Lumina"`, versión
+  `6.0.0`, `description`), `<title>` y los 3 textos visibles en
+  `index.html` ("Abrir ___ al iniciar Windows", el párrafo de propósito,
+  "Acerca de"), el comentario de `abrir-issues-github`/cuerpo del correo
+  en `renderer.js`, `README.md`, y `assets/icono.svg` (antes una "S"
+  estilizada con gradiente azul; ahora el sol ámbar con la cara de Chía).
+  `assets/icono.png` se regeneró con
+  `node_modules\.bin\electron.cmd scripts\generar-icono.js`.
+- **Qué NO cambió, a propósito**: `app.setName('simple-welcome')` en
+  `main.js` (ver el comentario ahí y "Nombre y versión" arriba — es el
+  candado de `userData`), el `appId` en `package.json`
+  (`com.abel.simplewelcome` — cambiarlo podría romper la continuidad del
+  actualizador/registro de Windows entre la instalación vieja y la nueva,
+  no se tocó sin poder probarlo a fondo), y el campo `"name"` raíz de
+  `package.json` (identificador interno de npm, no se muestra en ningún
+  lado).
+- **"Beta" desapareció de la pantalla Acerca de**: `pintarVersionApp()`
+  en `renderer.js` ya no antepone "Beta" al `X.Y` — ahora muestra el
+  número tal cual (ver también la excepción de versionado anotada arriba,
+  sobre por qué esta sí fue una subida de X a propósito).
+- **Ojo con la próxima instalación real**: cambiar `productName` cambia
+  el nombre de la carpeta de instalación por usuario que arma NSIS
+  (`%LOCALAPPDATA%\Programs\<productName>`) — es probable que la
+  actualización automática desde la 5.11 instalada hoy no "reemplace en
+  el mismo lugar" sino que instale Lumina en una carpeta nueva. Los datos
+  no se pierden (userData es independiente, ver arriba), pero vale la
+  pena que Abel revise después de actualizar si quedó un acceso directo
+  viejo de "Simple Welcome" y lo borre a mano si es así — no se pudo
+  probar este caso específico sin publicar de verdad.
+- Probado con datos aislados (`app.setPath('userData', ...)` temporal) y
+  JS inyectado leyendo el DOM real tras abrir Configuración > Acerca de:
+  confirmado `document.title` = "Lumina", el título de Acerca de =
+  "Lumina", la versión mostrada = "6.0" (sin "Beta"), y el texto de inicio
+  con Windows actualizado. El ícono se generó y se verificó reduciéndolo
+  de verdad a 48/32/24/16px con `nativeImage.resize()` — se lee bien
+  hasta 32px; a 16px pierde el detalle como cualquier ícono con texto (no
+  se hizo un segundo arte para ese tamaño, no vale la pena con
+  electron-builder generando el `.ico` a partir de un solo PNG).

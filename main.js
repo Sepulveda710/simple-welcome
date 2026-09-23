@@ -4,11 +4,13 @@ const { autoUpdater } = require('electron-updater');
 
 // Fija el nombre interno (y con él, dónde vive %APPDATA%\<esto>, la
 // carpeta de todos tus datos) SIN depender de "productName" en package.json
-// ni del empaquetador — así, si el día de mañana el instalador o el ícono
-// de Windows muestran "Simple Welcome" con mayúsculas y espacio, la
-// carpeta de datos real sigue siendo la misma de siempre y no "se pierde"
-// nada al actualizar. Tiene que llamarse ANTES que cualquier módulo pida
-// app.getPath('userData') (configuracion.js, estado-lectura.js, etc.).
+// ni del empaquetador — así, aunque el instalador o el ícono de Windows
+// muestren "Lumina" (el nombre visible desde la versión 6.0; antes decía
+// "Simple Welcome"), la carpeta de datos real sigue siendo la misma de
+// siempre y no "se pierde" nada al actualizar. Tiene que llamarse ANTES
+// que cualquier módulo pida app.getPath('userData') (configuracion.js,
+// estado-lectura.js, etc.). NO renombrar esto a 'lumina' — es justo el
+// candado que evita que un cambio de marca mueva los datos de Abel.
 app.setName('simple-welcome');
 
 const { generarSaludo } = require('./src/saludo');

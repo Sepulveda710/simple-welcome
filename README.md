@@ -1,4 +1,4 @@
-# Simple Welcome
+# Lumina
 
 Una app de bienvenida para Windows: al encender tu computadora te saluda,
 te muestra el clima, tu calendario y las noticias de **tus** fuentes, y te
