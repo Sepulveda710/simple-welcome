@@ -31,7 +31,7 @@ seguir la serie de Y (5.3). Regla real:
   acumulación tan grande que Y ya se sentiría absurdo (¿5.19?). Ante la
   duda, es Y — Abel prefiere corregir un X de más rebajándolo que ver la
   beta subir de número principal seguido.
-- Estamos en **Beta 5.10** al momento de escribir esto (4.0 → 4.1: separar
+- Estamos en **Beta 5.11** al momento de escribir esto (4.0 → 4.1: separar
   el tema claro/oscuro del modo cálido de lectura, que antes compartían la
   misma variable — ver "Decisiones técnicas importantes" abajo. 4.1 → 4.2:
   mejoras a la barra lateral del modo lectura. 4.2 → 5.0: portada del
@@ -52,10 +52,15 @@ seguir la serie de Y (5.3). Regla real:
   resolución, caja de comentarios y Configuración rediseñada estilo
   Windows 11 con edición de fuentes. 5.9 → 5.10: lector de noticias en voz
   alta (voces de Windows) y la Revista del Consumidor de Profeco como
-  fuente — ver "Estado actual").
+  fuente. 5.10 → 5.11: tablas del modo lectura con estilo, tamaño de texto
+  ajustable (90–130%), rediseño de la barra del modo lectura (menús Aa/···),
+  modo cálido de lectura extendido a toda la app, aviso visual al copiar
+  enlace, esqueleto con brillo al cargar un artículo, y Chía integrada al
+  reproductor de voz (cara con boca animada mientras lee) — ver "Estado
+  actual").
 
-  Ojo: las versiones son X.Y numéricas, no decimales — 5.10 va DESPUÉS de
-  5.9 (package.json "5.10.0", electron-updater lo compara bien con semver).
+  Ojo: las versiones son X.Y numéricas, no decimales — 5.11 va DESPUÉS de
+  5.10 (package.json "5.11.0", electron-updater lo compara bien con semver).
 
 ## Cómo le gusta trabajar a Abel (el usuario)
 

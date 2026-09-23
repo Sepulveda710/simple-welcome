@@ -1,6 +1,6 @@
 {
   "name": "simple-welcome",
-  "version": "5.10.0",
+  "version": "5.11.0",
   "description": "Simple Welcome — app de bienvenida al iniciar Windows: saludo, hora y noticias con modo lectura",
   "author": "Abel",
   "main": "main.js",
