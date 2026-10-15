@@ -985,3 +985,6 @@ verlo dentro de la app, con barra de progreso completa.
   descarga real desde GitHub Releases y `quitAndInstall()` cerrando e
   instalando de verdad — probarlo con la primera actualización real que
   Abel reciba después de instalar la 6.0.
+
+
+**Feeds de 10 notas: se piden páginas extra (2026-10-14, main).** Al agregar El CEO (WordPress) Abel notó que solo se veían sus últimas 10 notas (~3 horas de publicación, el feed corta ahí aunque el sitio tenga más). `leerFuente` en `src/lector-rss.js` ahora, si un feed entrega entre 10 y 19 notas (menos del límite de 20), pide `?paged=2` (hasta 2 páginas extra) y junta lo nuevo deduplicando por enlace. Los feeds que no soportan ese parámetro devuelven la misma página, que no aporta enlaces nuevos, y ahí se deja de pedir; un fallo en la página extra no pierde la primera. Probado con las 9 fuentes reales de Abel en una copia aislada: El CEO pasó de 10 a 20 notas (cubre ~7 horas en vez de 3), 0 duplicados, la carga completa tardó ~4.3 s, SoftZone (15) y La Jornada (12) quedaron igual (ya entregaban todo lo que tienen). Ojo: es una petición extra por cada fuente que entregue 10–19 notas, en cada recarga.

@@ -74,23 +74,61 @@ function normalizarArticulo(item, fuente) {
 
 // Lee UNA fuente. Si falla, no lanza el error hacia arriba — lo captura aquí
 // mismo y devuelve una lista vacía, para que las demás fuentes no se vean afectadas.
+// Muchos feeds (todo WordPress, por ejemplo El CEO) entregan solo sus
+// últimas 10 notas por página aunque el sitio tenga más — con medios que
+// publican seguido eso son apenas unas horas. WordPress acepta "?paged=2",
+// "?paged=3"… para pedir las siguientes; los feeds que no lo soportan
+// simplemente ignoran el parámetro y devuelven la misma página, lo cual
+// se detecta porque no aporta enlaces nuevos y ahí se deja de pedir.
+const MINIMO_PARA_PEDIR_MAS_PAGINAS = 10; // un feed con menos de esto probablemente ya entregó todo lo que tiene
+const MAX_PAGINAS_EXTRA = 2;
+
+function urlDePagina(urlFeed, pagina) {
+  const url = new URL(urlFeed);
+  url.searchParams.set('paged', String(pagina));
+  return url.toString();
+}
+
+async function leerPaginasAdicionales(fuente, itemsIniciales, limite) {
+  const vistos = new Set(itemsIniciales.map((item) => item.link));
+  const items = [...itemsIniciales];
+
+  for (let pagina = 2; pagina < 2 + MAX_PAGINAS_EXTRA && items.length < limite; pagina += 1) {
+    try {
+      const feed = await parser.parseURL(urlDePagina(fuente.url, pagina));
+      const nuevos = feed.items.filter((item) => item.link && !vistos.has(item.link));
+      if (nuevos.length === 0) break;
+      nuevos.forEach((item) => vistos.add(item.link));
+      items.push(...nuevos);
+    } catch {
+      break; // la primera página ya está a salvo; no vale la pena perderla por esta
+    }
+  }
+
+  return items;
+}
+
 async function leerFuente(fuente, limite) {
   if (esFuenteProfeco(fuente.url)) return leerRevistaProfeco(fuente, limite);
 
   try {
     const feed = await parser.parseURL(fuente.url);
-    return feed.items.slice(0, limite).map((item) => normalizarArticulo(item, fuente));
+    let items = feed.items;
+    if (items.length >= MINIMO_PARA_PEDIR_MAS_PAGINAS && items.length < limite) {
+      items = await leerPaginasAdicionales(fuente, items, limite);
+    }
+    return items.slice(0, limite).map((item) => normalizarArticulo(item, fuente));
   } catch (error) {
     console.warn(`No se pudo leer "${fuente.nombre}": ${error.message}`);
     return [];
   }
 }
 
-// El límite subió de 5 a 20: no significa que RSS tenga "más páginas" de
-// artículos viejos (los feeds solo dan lo más reciente) — es simplemente
-// para tener un fondo más grande de artículos ya descargados, y así el
-// botón "Cargar más" de la interfaz pueda revelar más sin volver a tocar
-// la red cada vez.
+// El límite subió de 5 a 20: es para tener un fondo más grande de
+// artículos ya descargados, y así el botón "Cargar más" de la interfaz
+// pueda revelar más sin volver a tocar la red cada vez. Los feeds que
+// entregan solo 10 por página se completan pidiendo la siguiente (ver
+// leerPaginasAdicionales arriba).
 async function obtenerNoticias(limitePorFuente = 20) {
   const fuentes = obtenerFuentes().filter((fuente) => fuente.activa !== false);
 
